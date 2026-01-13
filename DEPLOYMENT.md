@@ -24,11 +24,13 @@ To deploy your latest changes:
 ```
 
 This script will:
-1. Build the project (`npm run build`)
-2. Initialize a git repository in the `dist` folder
-3. Commit all built files
-4. Force-push to the `gh-pages` branch
-5. Display the deployment URL
+1. Create an annotated git tag (`deploy-N`) with deployment metadata
+2. Build the project (`npm run build`)
+3. Initialize a git repository in the `dist` folder
+4. Commit all built files
+5. Force-push to the `gh-pages` branch
+6. Push the deployment tag to origin
+7. Display the deployment URL and tag
 
 ## Deployment URL
 
@@ -40,6 +42,36 @@ Your app will be available at: **https://rplsmn.github.io/DuckMSI/**
 - **Built assets** are pushed to the `gh-pages` branch
 - GitHub Pages serves the `gh-pages` branch
 - The `dist/` folder is gitignored on `main` (no build artifacts in source control)
+
+## Deployment Tags
+
+Each deployment automatically creates an annotated git tag with the format `deploy-N` (e.g., `deploy-1`, `deploy-2`, etc.).
+
+### View Deployment History
+
+```bash
+# List all deployment tags
+git tag -l "deploy-*"
+
+# View tag details (timestamp, branch, commit)
+git tag -l "deploy-*" -n9
+
+# View a specific deployment's details
+git show deploy-1
+```
+
+You can also view all tags on GitHub: https://github.com/rplsmn/DuckMSI/tags
+
+### Tag Contents
+
+Each tag includes:
+- Deployment number
+- Timestamp
+- Source branch
+- Commit SHA
+- Deployment URL
+
+This makes it easy to track when changes were deployed and what code version was live at any given time.
 
 ## Testing Before Deploy
 
