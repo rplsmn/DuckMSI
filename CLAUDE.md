@@ -1,6 +1,8 @@
 ### Project Overview
 
-This project implements differentiable logic gates for learning cellular automata rules (particularly Conway's Game of Life) based on the paper [Differentiable Logic Cellular Automata](https://google-research.github.io/self-organising-systems/difflogic-ca/).
+This project implements a static HTML page for parquet files upload, exploration using DuckDB WASM and aggregates / visualisation exports.
+The goal is to provide a privacy preserving way for people that own secure / private data and cannot setup DuckDB / a data science environnemnt to be able to explore their data in the browser without sending the data to a remote server.
+The app provides SELECT statements only, has a few pre-made SQL statements, and offers to export the results to csv (or image formats when applicable).
 
 ### The Development Loop
 
