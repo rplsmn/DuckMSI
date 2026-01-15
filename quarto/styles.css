@@ -1,0 +1,180 @@
+/* DuckMSI Quarto Styles */
+
+body {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.card h2 {
+  margin-top: 0;
+  color: #333;
+  font-size: 1.2em;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* Status */
+.status {
+  text-align: center;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.status.ready {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status.loading {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* File upload */
+.file-loaded {
+  margin-top: 10px;
+  padding: 10px;
+  background: #d4edda;
+  border-radius: 4px;
+  color: #155724;
+}
+
+.file-hint {
+  color: #666;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.file-tag {
+  display: inline-block;
+  background: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  margin-right: 8px;
+}
+
+/* SQL Input */
+textarea {
+  font-family: 'Consolas', 'Monaco', monospace !important;
+}
+
+/* Results */
+.results-container {
+  max-height: 400px;
+  overflow: auto;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.results-table th {
+  background: #343a40;
+  color: white;
+  padding: 10px;
+  text-align: left;
+  position: sticky;
+  top: 0;
+}
+
+.results-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.results-table tbody tr:hover {
+  background: #e9ecef;
+}
+
+.row-count {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Messages */
+.message {
+  color: #666;
+  font-style: italic;
+  padding: 15px;
+}
+
+.error {
+  color: #dc3545;
+  background: #f8d7da;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+/* Privacy note */
+.privacy-note {
+  background: #e7f3ff;
+  border-left: 4px solid #007bff;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 0 4px 4px 0;
+  font-size: 14px;
+}
+
+/* Override Quarto defaults for OJS inputs */
+form {
+  max-width: 100%;
+}
+
+form input[type="file"] {
+  padding: 10px;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+}
+
+form input[type="file"]:hover {
+  border-color: #007bff;
+  background-color: #f8f9fa;
+}
+
+form textarea {
+  width: 100% !important;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
+}
+
+form textarea:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+button {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+button:hover {
+  background: #218838;
+}
+
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}

@@ -1,0 +1,188 @@
+---
+title: "DuckMSI - Privacy-First Parquet Explorer"
+format:
+  html:
+    page-layout: full
+---
+
+```{ojs}
+//| echo: false
+
+// Import DuckDB WASM
+duckdb = {
+  const duckdb = await import("https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/+esm");
+  return duckdb;
+}
+
+// Initialize DuckDB
+db = {
+  const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
+  const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
+
+  const worker_url = URL.createObjectURL(
+    new Blob([`importScripts("${bundle.mainWorker}");`], { type: 'text/javascript' })
+  );
+
+  const worker = new Worker(worker_url);
+  const logger = new duckdb.ConsoleLogger();
+  const db = new duckdb.AsyncDuckDB(logger, worker);
+
+  await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+  URL.revokeObjectURL(worker_url);
+
+  return db;
+}
+
+conn = db.connect()
+
+// Status indicator
+viewof status = {
+  const div = html`<div class="status ready">DuckDB Ready</div>`;
+  return div;
+}
+```
+
+::: {.card}
+## 1. Upload Parquet File
+
+```{ojs}
+//| echo: false
+
+// File input
+viewof parquetFile = Inputs.file({
+  label: "Choose a .parquet file",
+  accept: ".parquet",
+  required: false
+})
+
+// Process uploaded file
+loadedFile = {
+  if (!parquetFile) return null;
+
+  const buffer = await parquetFile.arrayBuffer();
+  const fileName = parquetFile.name;
+
+  // Register file with DuckDB
+  const connection = await conn;
+  await db.registerFileBuffer(fileName, new Uint8Array(buffer));
+
+  return fileName;
+}
+
+// Display loaded file
+{
+  if (loadedFile) {
+    return html`<div class="file-loaded">
+      <span class="file-tag">${loadedFile}</span> loaded successfully
+    </div>`;
+  }
+  return html`<div class="file-hint">No file loaded yet. Upload a .parquet file to get started.</div>`;
+}
+```
+:::
+
+::: {.card}
+## 2. Enter SQL Query
+
+```{ojs}
+//| echo: false
+
+// Default query based on loaded file
+defaultQuery = loadedFile
+  ? `SELECT * FROM '${loadedFile}' LIMIT 10`
+  : "SELECT * FROM 'your_file.parquet' LIMIT 10"
+
+// SQL input
+viewof sqlQuery = Inputs.textarea({
+  label: "SQL Query",
+  placeholder: "SELECT * FROM 'your_file.parquet' LIMIT 10",
+  value: defaultQuery,
+  rows: 4,
+  width: "100%",
+  monospace: true
+})
+
+// Execute button
+viewof executeClicked = Inputs.button("Execute Query", {
+  disabled: !loadedFile
+})
+```
+:::
+
+::: {.card}
+## 3. Query Results
+
+```{ojs}
+//| echo: false
+
+// Execute query and get results
+queryResults = {
+  // Trigger on button click
+  executeClicked;
+
+  if (!loadedFile || !sqlQuery.trim()) {
+    return { columns: [], rows: [], error: null, message: "Upload a file and enter a query to see results." };
+  }
+
+  try {
+    const connection = await conn;
+    const result = await connection.query(sqlQuery);
+    const data = result.toArray();
+
+    if (data.length === 0) {
+      return { columns: [], rows: [], error: null, message: "Query returned no results." };
+    }
+
+    const columns = Object.keys(data[0]);
+    const rows = data.slice(0, 50).map(row => columns.map(col => row[col]));
+
+    return { columns, rows, error: null, message: null };
+  } catch (e) {
+    return { columns: [], rows: [], error: e.message, message: null };
+  }
+}
+
+// Display results
+{
+  if (queryResults.error) {
+    return html`<div class="error">Error: ${queryResults.error}</div>`;
+  }
+
+  if (queryResults.message) {
+    return html`<div class="message">${queryResults.message}</div>`;
+  }
+
+  if (queryResults.rows.length === 0) {
+    return html`<div class="message">No results to display.</div>`;
+  }
+
+  // Build table
+  const table = html`<table class="results-table">
+    <thead>
+      <tr>
+        ${queryResults.columns.map(col => html`<th>${col}</th>`)}
+      </tr>
+    </thead>
+    <tbody>
+      ${queryResults.rows.map(row => html`<tr>
+        ${row.map(cell => html`<td>${cell !== null && cell !== undefined ? String(cell) : 'NULL'}</td>`)}
+      </tr>`)}
+    </tbody>
+  </table>`;
+
+  return html`<div class="results-container">${table}</div>`;
+}
+
+// Row count
+{
+  if (queryResults.rows.length > 0) {
+    return html`<div class="row-count">Showing ${queryResults.rows.length} rows (limit 50)</div>`;
+  }
+  return html``;
+}
+```
+:::
+
+::: {.privacy-note}
+**Privacy First**: All data processing happens entirely in your browser. Your data never leaves your device.
+:::

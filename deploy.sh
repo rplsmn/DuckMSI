@@ -2,8 +2,20 @@
 
 # GitHub Pages Deployment Script
 # Builds the project and deploys to gh-pages branch
+# Usage:
+#   ./deploy.sh           # Deploy Quarto version (default)
+#   ./deploy.sh --quarto  # Deploy Quarto version
+#   ./deploy.sh --vite    # Deploy Vite version
 
 set -e  # Exit on error
+
+# Parse arguments
+BUILD_TYPE="quarto"
+if [ "$1" = "--vite" ]; then
+  BUILD_TYPE="vite"
+elif [ "$1" = "--quarto" ]; then
+  BUILD_TYPE="quarto"
+fi
 
 # Get the next deployment tag number
 LAST_TAG=$(git tag -l "deploy-*" | sed 's/deploy-//' | sort -n | tail -1)
@@ -25,17 +37,26 @@ git tag -a "${DEPLOY_TAG}" -m "Deployment ${NEXT_NUM}
 Deployed: ${TIMESTAMP}
 Branch: ${CURRENT_BRANCH}
 Commit: ${CURRENT_COMMIT}
+Build: ${BUILD_TYPE}
 URL: https://rplsmn.github.io/DuckMSI/"
 
-echo "🏗️  Building project..."
-npm run build
+# Build based on type
+if [ "$BUILD_TYPE" = "quarto" ]; then
+  echo "🏗️  Building Quarto project..."
+  quarto render quarto/
+  DIST_DIR="quarto/_site"
+else
+  echo "🏗️  Building Vite project..."
+  npm run build
+  DIST_DIR="dist"
+fi
 
-echo "📦 Navigating to dist folder..."
-cd dist
+echo "📦 Navigating to ${DIST_DIR} folder..."
+cd "$DIST_DIR"
 
 # Initialize git if needed
 if [ ! -d .git ]; then
-  echo "🎬 Initializing git in dist..."
+  echo "🎬 Initializing git in ${DIST_DIR}..."
   git init
   git config user.name "$(git config --get user.name)"
   git config user.email "$(git config --get user.email)"
@@ -45,12 +66,21 @@ echo "📝 Adding files..."
 git add -A
 
 echo "💾 Creating commit..."
-git commit -m "Deploy to GitHub Pages - $(date '+%Y-%m-%d %H:%M:%S')"
+git commit -m "Deploy to GitHub Pages (${BUILD_TYPE}) - $(date '+%Y-%m-%d %H:%M:%S')"
+
+# Get remote URL from origin (works with both SSH and HTTPS)
+REMOTE_URL=$(cd .. && git remote get-url origin)
+if [ "$BUILD_TYPE" = "quarto" ]; then
+  REMOTE_URL=$(cd ../.. && git remote get-url origin)
+fi
 
 echo "🚀 Pushing to gh-pages branch..."
-git push -f git@github.com:rplsmn/DuckMSI.git HEAD:gh-pages
+git push -f "$REMOTE_URL" HEAD:gh-pages
 
 cd ..
+if [ "$BUILD_TYPE" = "quarto" ]; then
+  cd ..
+fi
 
 echo "🏷️  Pushing deployment tag..."
 git push origin "${DEPLOY_TAG}"
@@ -58,6 +88,7 @@ git push origin "${DEPLOY_TAG}"
 echo "✅ Deployment complete!"
 echo "🌐 Your site will be available at: https://rplsmn.github.io/DuckMSI/"
 echo "🏷️  Tagged as: ${DEPLOY_TAG}"
+echo "📦 Build type: ${BUILD_TYPE}"
 echo ""
 echo "View deployment history:"
 echo "  git tag -l 'deploy-*' -n9"

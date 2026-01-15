@@ -3,3 +3,8 @@ dist/
 .DS_Store
 *.log
 *.parquet
+
+# Quarto
+quarto/_site/
+quarto/.quarto/
+.quarto/
