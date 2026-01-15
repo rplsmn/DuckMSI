@@ -220,6 +220,9 @@ queryResults = {
   }
 
   // Build table with explicit DOM construction
+  const container = document.createElement('div');
+  container.className = 'results-container';
+
   const table = document.createElement('table');
   table.className = 'results-table';
 
@@ -247,7 +250,8 @@ queryResults = {
   });
   table.appendChild(tbody);
 
-  return html`<div class="results-container">${table}</div>`;
+  container.appendChild(table);
+  return container;
 }
 
 // Row count
