@@ -1,34 +1,87 @@
-### Project Overview
+# DuckMSI - Privacy-First Parquet Explorer
 
-This project implements a static HTML page for parquet files upload, exploration using DuckDB WASM and aggregates / visualisation exports.
-The goal is to provide a privacy preserving way for people that own secure / private data and cannot setup DuckDB / a data science environnemnt to be able to explore their data in the browser without sending the data to a remote server.
-The app provides SELECT statements only, has a few pre-made SQL statements, and offers to export the results to csv (or image formats when applicable).
+## Getting Started
+
+**IMPORTANT**: Before starting any work on this project, always read the documents in the `agents/` folder if they exist:
+
+1. **`agents/plan.md`** - Full development roadmap and phase requirements
+2. **`agents/implementation-log.md`** - Implementation state, learnings, and what's next
+
+**Token-saving tips**:
+
+- **Completed work**: Don't re-read completed phase plans unless debugging. Check `agents/plan.md` for phase status.
+- **Current focus**: Always read `agents/implementation-log.md` first - it has the current task and next steps.
+
+## Project Overview
+
+A static HTML page for privacy-preserving parquet file exploration using DuckDB WASM. Users can upload, explore, and export data entirely in-browser without sending sensitive data to any server.
+
+**Key Features**:
+- Parquet file upload and exploration via DuckDB WASM
+- SELECT-only SQL statements (no data modification)
+- Pre-made SQL query templates
+- Export to CSV (and images for visualizations)
+
+**Core Files**:
+- `index.html` - Main UI structure and styling
+- `src/main.js` - DuckDB initialization and database operations
+- `src/app.js` - File upload handling and query execution
+
+## Build & Test Commands
+
+```bash
+# Install dependencies
+npm install
+
+# Development server
+npm run dev
+
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Production build
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## LLM Agent Workflow
+
+**Critical**: These documents go in EVERY context window. Keep them compact, clear, and unambiguous.
 
 ### The Development Loop
 
-Always read the agents/ documents if they exist before you work.
-
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ 1. READ DOCS (if exist)                                            │
-│    └─ plan.md → implementation-log.md      │
+│ 1. READ DOCS (if exist)                                 │
+│    └─ agents/plan.md → implementation-log.md            │
 ├─────────────────────────────────────────────────────────┤
-│ 2. CREATE PHASE PLAN                                    │
-│    └─ plans/phase-X.X-name.md (detailed tasks, tests)  │
+│ 2. CREATE BRANCH                                        │
+│    └─ git checkout -b feature/description               │
 ├─────────────────────────────────────────────────────────┤
-│ 3. IMPLEMENT                                            │
-│    └─ TDD: tests first → code → verify exit criteria   │
+│ 3. CREATE PHASE PLAN                                    │
+│    └─ plans/phase-X.X-name.md (detailed tasks, tests)   │
 ├─────────────────────────────────────────────────────────┤
-│ 4. PUSH PR                                              │
-│    └─ Branch → PR → wait for human review              │
+│ 4. IMPLEMENT (TDD)                                      │
+│    └─ Write tests first → code → npm test → verify      │
 ├─────────────────────────────────────────────────────────┤
-│ 5. UPDATE DOCS (after human approval)                  │
-│    ├─ Update implementation-log.md (keep <100 lines)   │
-│    ├─ Mark phase complete in plan.md                   │
+│ 5. COMMIT & PUSH                                        │
+│    └─ Clear commit messages → push to feature branch    │
+├─────────────────────────────────────────────────────────┤
+│ 6. CREATE PR                                            │
+│    └─ Open PR → wait for human review                   │
+├─────────────────────────────────────────────────────────┤
+│ 7. UPDATE DOCS (after human approval)                   │
+│    ├─ Update implementation-log.md (keep <100 lines)    │
+│    ├─ Mark phase complete in plan.md                    │
 │    └─ Merge PR                                          │
 └─────────────────────────────────────────────────────────┘
         │                                        │
-        └────────── Loop back to step 1 ────────┘
+        └────────── Loop back to step 1 ─────────┘
 ```
 
 ### Document Maintenance Rules
@@ -37,8 +90,8 @@ Always read the agents/ documents if they exist before you work.
 
 - Full roadmap, all phases, exit criteria
 - Update when: phase completes, requirements change, major architectural shift
-- Mark phases with ✅/🚧/⬜ status
-- Keep technical details (hyperparameters, architectures)
+- Mark phases with status indicators
+- Keep technical details and specifications
 
 **`agents/implementation-log.md`** (MUST stay <100 lines):
 
@@ -51,7 +104,7 @@ Always read the agents/ documents if they exist before you work.
 **After each phase completion**:
 
 1. Update implementation-log.md: mark phase done, update current phase, check line count
-2. Update plan.md: mark phase ✅, update status table if needed
+2. Update plan.md: mark phase complete, update status table if needed
 3. Archive detailed work in git commits (don't bloat the log)
 
 #### Why These Documents Matter
@@ -62,23 +115,7 @@ Always read the agents/ documents if they exist before you work.
 
 #### Maintaining These Documents
 
-As the project progresses, these documents can become unwieldy. **Periodically review and compact them**:
-
-**For `implementation-log.md`:**
-
-- Completed phases can be removed once stable (keep key learnings if useful for later phases)
-- Collapse multiple phase sections into summary tables when appropriate
-
-**For `plan.md`:**
-
-- Most of the time, doesn't need updatges
-- Remove or update phases that no longer apply due to architectural changes
-- Mark completed phases with ✅
-- Update exit criteria if experience shows they were unrealistic or need adjustment
-- Remove speculative future phases that are no longer relevant
-
 **When to compact:**
-
 - When documents exceed ~500 lines and become hard to scan
 - When major architectural decisions invalidate earlier plans
 - When starting a new major phase
@@ -88,18 +125,18 @@ As the project progresses, these documents can become unwieldy. **Periodically r
 
 1. Read phase requirements from `agents/plan.md`
 
-IF `plans/phase-X.X-name.md` for the current phase DOESN'T EXIST
+**IF `plans/phase-X.X-name.md` for the current phase DOESN'T EXIST:**
 
 1. Create detailed implementation plan in `plans/phase-X.X-name.md`
-2. Commit with detailed message to plan/ branch (never to main)
+2. Commit with detailed message to feature branch (never to main)
 3. Push branch and create PR
 4. After human approval: update docs (keep log <100 lines), merge PR
 
-IF `plans/phase-X.X-name.md` for the current phase ALREADY EXISTS (committed recently)
+**IF `plans/phase-X.X-name.md` for the current phase ALREADY EXISTS:**
 
 1. Create TodoWrite list with specific tasks
 2. Write unit tests for core functionality first
-3. Implement core logic, run `cargo test --lib` continuously
+3. Implement code, run `npm test` continuously
 4. Verify all exit criteria met
 5. Commit with detailed message (never to main)
 6. Push branch and create PR
@@ -107,26 +144,42 @@ IF `plans/phase-X.X-name.md` for the current phase ALREADY EXISTS (committed rec
 
 ### Long-Running Tasks
 
-For any task that are not generative, e.g. deploying:
+For any task that blocks progress (e.g., deployment, long builds):
 
 1. **Do NOT run it yourself** - it will timeout or block progress
 2. **Provide the command** to the human with clear instructions
 3. **Wait for feedback** - the human will run it and report results
-4. **Complete all your other independant work before handing off**
+4. **Complete all your other independent work before handing off**
 5. **Continue based on results** - adjust approach if needed
 
 Example:
 
 ```
-I've committed and pushed the changes. A deployment is needed, it will take ~30 minutes. Please run:
+I've committed and pushed the changes. Please deploy by running:
 
-    cargo run --bin train_gol --release
+    ./deploy.sh
 
-And let me know that it worked.
+And let me know when it's complete.
 ```
 
 ### Completion Protocol
 
-Use the gh cli utility to manage interactions with Github.
-When working on a new phase / task independant of the previous one, create a new dedicated branch
-The human in the loop is responsible for reviewing your work through the PR's
+- When working on a new phase/task independent of the previous one, create a new dedicated branch
+- The human in the loop is responsible for reviewing your work through the PRs
+- Always push to feature branches, never directly to main
+
+## Tech Stack
+
+- **Frontend**: HTML, CSS, JavaScript (ES Modules)
+- **Database**: DuckDB WASM for in-browser SQL
+- **Build**: Vite
+- **Testing**: Vitest with jsdom
+- **Deployment**: GitHub Pages via `deploy.sh`
+
+## Architecture Notes
+
+**Privacy-First Design**: All data processing happens client-side. No data leaves the user's browser.
+
+**Future Considerations**:
+- Quarto can be used for initial MVP (static site generation with interactive elements)
+- Migration to Svelte for more complex interactivity when needed
