@@ -35,10 +35,10 @@ db = {
 
 conn = db.connect()
 
-// Status indicator
+// Status indicator - small green check
 viewof status = {
-  const div = html`<div class="status ready">DuckDB Ready</div>`;
-  return div;
+  const span = html`<span class="status-indicator"><span style="color: #28a745; font-size: 14px;">✓</span> DuckDB Ready</span>`;
+  return span;
 }
 ```
 
@@ -162,6 +162,12 @@ viewof sqlQuery = Inputs.textarea({
 viewof executeClicked = Inputs.button("Execute Query", {
   disabled: !loadedFile
 })
+
+// Capture SQL query when button is clicked
+sqlToExecute = {
+  executeClicked; // Trigger on button click
+  return sqlQuery; // Capture current value
+}
 ```
 :::
 
@@ -173,16 +179,13 @@ viewof executeClicked = Inputs.button("Execute Query", {
 
 // Execute query and get results
 queryResults = {
-  // Trigger on button click
-  executeClicked;
-
-  if (!loadedFile || !sqlQuery.trim()) {
+  if (!loadedFile || !sqlToExecute.trim()) {
     return { columns: [], rows: [], error: null, message: "Upload a file and enter a query to see results." };
   }
 
   try {
     const connection = await conn;
-    const result = await connection.query(sqlQuery);
+    const result = await connection.query(sqlToExecute);
     const data = result.toArray();
 
     if (data.length === 0) {
@@ -212,19 +215,33 @@ queryResults = {
     return html`<div class="message">No results to display.</div>`;
   }
 
-  // Build table
-  const table = html`<table class="results-table">
-    <thead>
-      <tr>
-        ${queryResults.columns.map(col => html`<th>${col}</th>`)}
-      </tr>
-    </thead>
-    <tbody>
-      ${queryResults.rows.map(row => html`<tr>
-        ${row.map(cell => html`<td>${cell !== null && cell !== undefined ? String(cell) : 'NULL'}</td>`)}
-      </tr>`)}
-    </tbody>
-  </table>`;
+  // Build table with explicit DOM construction
+  const table = document.createElement('table');
+  table.className = 'results-table';
+
+  // Create header
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+  queryResults.columns.forEach(col => {
+    const th = document.createElement('th');
+    th.textContent = col;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  // Create body
+  const tbody = document.createElement('tbody');
+  queryResults.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    row.forEach(cell => {
+      const td = document.createElement('td');
+      td.textContent = cell !== null && cell !== undefined ? String(cell) : 'NULL';
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
 
   return html`<div class="results-container">${table}</div>`;
 }

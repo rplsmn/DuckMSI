@@ -22,22 +22,15 @@ body {
   padding-bottom: 10px;
 }
 
-/* Status */
-.status {
-  text-align: center;
-  padding: 10px;
-  margin-bottom: 20px;
-  border-radius: 4px;
-}
-
-.status.ready {
-  background: #d4edda;
+/* Status indicator - small inline */
+.status-indicator {
+  display: inline-block;
+  padding: 5px 10px;
+  margin-bottom: 15px;
+  font-size: 14px;
   color: #155724;
-}
-
-.status.loading {
-  background: #fff3cd;
-  color: #856404;
+  background: transparent;
+  border-radius: 4px;
 }
 
 /* File upload */
