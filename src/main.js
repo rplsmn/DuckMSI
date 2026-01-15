@@ -122,7 +122,8 @@ function displayAllFileStatistics() {
     // Defensive checks for undefined values
     const rowCount = file.rowCount || 0;
     const columnCount = file.columnCount || 0;
-    const uniqueRowCount = file.uniqueRowCount || 0;
+    // If uniqueRowCount is undefined, assume no duplicates (uniqueRowCount = rowCount)
+    const uniqueRowCount = file.uniqueRowCount !== undefined ? file.uniqueRowCount : rowCount;
 
     const duplicatePercent = rowCount > 0
       ? ((rowCount - uniqueRowCount) / rowCount * 100).toFixed(1)
