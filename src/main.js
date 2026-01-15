@@ -102,12 +102,15 @@ function updateFileListDisplay() {
 function displayAllFileStatistics() {
   const files = app.getAllTablesMetadata();
 
+  console.log('displayAllFileStatistics called, files:', files.length);
+
   if (files.length === 0) {
     diagnosticsBody.innerHTML = '<tr><td colspan="5" class="empty-message">Upload files to see statistics</td></tr>';
     diagnosticsDashboard.classList.remove('visible');
     return;
   }
 
+  console.log('Showing diagnostics for', files.length, 'files');
   diagnosticsBody.innerHTML = files.map(file => {
     const duplicatePercent = file.rowCount > 0
       ? ((file.rowCount - file.uniqueRowCount) / file.rowCount * 100).toFixed(1)

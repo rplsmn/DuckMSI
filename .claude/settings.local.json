@@ -11,7 +11,8 @@
       "Bash(gh pr create:*)",
       "Bash(quarto render:*)",
       "Bash(npm test:*)",
-      "Bash(gh pr view:*)"
+      "Bash(gh pr view:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }
