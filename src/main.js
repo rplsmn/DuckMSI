@@ -8,9 +8,7 @@ const fileInput = document.getElementById('file-input');
 const fileListBody = document.getElementById('file-list-body');
 const clearAllBtn = document.getElementById('clear-all-btn');
 const diagnosticsDashboard = document.getElementById('diagnostics-dashboard');
-const statRows = document.getElementById('stat-rows');
-const statColumns = document.getElementById('stat-columns');
-const statUnique = document.getElementById('stat-unique');
+const diagnosticsBody = document.getElementById('diagnostics-body');
 const sqlInput = document.getElementById('sql-input');
 const executeBtn = document.getElementById('execute-btn');
 const resultsBox = document.getElementById('results-box');
@@ -94,31 +92,44 @@ function updateFileListDisplay() {
   // Update example query
   updateExampleQuery();
 
-  // Show diagnostics for first file if not already showing
-  if (!diagnosticsDashboard.classList.contains('visible') && files.length > 0) {
-    displayFileStatistics(files[0].originalName);
-  }
+  // Update diagnostics table with all files
+  displayAllFileStatistics();
 }
 
 /**
- * Display file statistics in the diagnostics dashboard
+ * Display statistics for all loaded files in diagnostics table
  */
-async function displayFileStatistics(fileName) {
-  try {
-    const stats = await app.getFileStatistics(fileName);
+function displayAllFileStatistics() {
+  const files = app.getAllTablesMetadata();
 
-    // Update the value boxes
-    statRows.textContent = stats.rowCount.toLocaleString();
-    statColumns.textContent = stats.columnCount.toLocaleString();
-    statUnique.textContent = stats.uniqueRowCount.toLocaleString();
-
-    // Show the diagnostics dashboard
-    diagnosticsDashboard.classList.add('visible');
-  } catch (error) {
-    console.error('Failed to get file statistics:', error);
-    // Hide dashboard on error
+  if (files.length === 0) {
+    diagnosticsBody.innerHTML = '<tr><td colspan="5" class="empty-message">Upload files to see statistics</td></tr>';
     diagnosticsDashboard.classList.remove('visible');
+    return;
   }
+
+  diagnosticsBody.innerHTML = files.map(file => {
+    const duplicatePercent = file.rowCount > 0
+      ? ((file.rowCount - file.uniqueRowCount) / file.rowCount * 100).toFixed(1)
+      : 0;
+
+    // Color code duplicate percentage
+    let duplicateClass = 'duplicate-low';
+    if (duplicatePercent > 20) duplicateClass = 'duplicate-high';
+    else if (duplicatePercent > 5) duplicateClass = 'duplicate-medium';
+
+    return `
+      <tr>
+        <td class="table-name-col">${file.tableName}</td>
+        <td class="number-col">${file.rowCount.toLocaleString()}</td>
+        <td class="number-col">${file.columnCount}</td>
+        <td class="number-col">${file.uniqueRowCount.toLocaleString()}</td>
+        <td class="number-col ${duplicateClass}">${duplicatePercent}%</td>
+      </tr>
+    `;
+  }).join('');
+
+  diagnosticsDashboard.classList.add('visible');
 }
 
 /**
@@ -144,7 +155,9 @@ async function processFiles(files) {
   updateFileListDisplay();
 
   if (successCount > 0) {
-    displaySuccess(`Successfully loaded ${successCount} file${successCount > 1 ? 's' : ''}${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
+    const tables = app.getAllTablesMetadata();
+    const tableNames = tables.slice(-successCount).map(t => t.tableName).join(', ');
+    displaySuccess(`Successfully loaded ${successCount} file${successCount > 1 ? 's' : ''}: ${tableNames}${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
   } else {
     displayError(new Error('Failed to load any files'));
   }
