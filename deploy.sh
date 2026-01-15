@@ -68,8 +68,14 @@ git add -A
 echo "💾 Creating commit..."
 git commit -m "Deploy to GitHub Pages (${BUILD_TYPE}) - $(date '+%Y-%m-%d %H:%M:%S')"
 
+# Get remote URL from origin (works with both SSH and HTTPS)
+REMOTE_URL=$(cd .. && git remote get-url origin)
+if [ "$BUILD_TYPE" = "quarto" ]; then
+  REMOTE_URL=$(cd ../.. && git remote get-url origin)
+fi
+
 echo "🚀 Pushing to gh-pages branch..."
-git push -f git@github.com:rplsmn/DuckMSI.git HEAD:gh-pages
+git push -f "$REMOTE_URL" HEAD:gh-pages
 
 cd ..
 if [ "$BUILD_TYPE" = "quarto" ]; then
