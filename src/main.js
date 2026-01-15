@@ -65,18 +65,24 @@ function updateFileListDisplay() {
     return;
   }
 
-  fileListBody.innerHTML = files.map(file => `
-    <tr>
-      <td class="table-name">${file.tableName}</td>
-      <td>${file.originalName}</td>
-      <td>${file.rowCount.toLocaleString()}</td>
-      <td>${file.columnCount}</td>
-      <td>
-        <button class="btn-small btn-rename" data-table="${file.tableName}">Rename</button>
-        <button class="btn-small btn-danger" data-table="${file.tableName}">Remove</button>
-      </td>
-    </tr>
-  `).join('');
+  fileListBody.innerHTML = files.map(file => {
+    // Defensive checks for undefined values
+    const rowCount = file.rowCount || 0;
+    const columnCount = file.columnCount || 0;
+
+    return `
+      <tr>
+        <td class="table-name">${file.tableName}</td>
+        <td>${file.originalName}</td>
+        <td>${rowCount.toLocaleString()}</td>
+        <td>${columnCount}</td>
+        <td>
+          <button class="btn-small btn-rename" data-table="${file.tableName}">Rename</button>
+          <button class="btn-small btn-danger" data-table="${file.tableName}">Remove</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 
   clearAllBtn.classList.add('visible');
 
@@ -111,9 +117,15 @@ function displayAllFileStatistics() {
   }
 
   console.log('Showing diagnostics for', files.length, 'files');
+
   diagnosticsBody.innerHTML = files.map(file => {
-    const duplicatePercent = file.rowCount > 0
-      ? ((file.rowCount - file.uniqueRowCount) / file.rowCount * 100).toFixed(1)
+    // Defensive checks for undefined values
+    const rowCount = file.rowCount || 0;
+    const columnCount = file.columnCount || 0;
+    const uniqueRowCount = file.uniqueRowCount || 0;
+
+    const duplicatePercent = rowCount > 0
+      ? ((rowCount - uniqueRowCount) / rowCount * 100).toFixed(1)
       : 0;
 
     // Color code duplicate percentage
@@ -124,9 +136,9 @@ function displayAllFileStatistics() {
     return `
       <tr>
         <td class="table-name-col">${file.tableName}</td>
-        <td class="number-col">${file.rowCount.toLocaleString()}</td>
-        <td class="number-col">${file.columnCount}</td>
-        <td class="number-col">${file.uniqueRowCount.toLocaleString()}</td>
+        <td class="number-col">${rowCount.toLocaleString()}</td>
+        <td class="number-col">${columnCount}</td>
+        <td class="number-col">${uniqueRowCount.toLocaleString()}</td>
         <td class="number-col ${duplicateClass}">${duplicatePercent}%</td>
       </tr>
     `;
@@ -146,7 +158,14 @@ async function processFiles(files) {
   for (const file of fileArray) {
     try {
       const { name, buffer } = await handleFileUpload(file);
+      console.log('Loading file:', name);
       const tableName = await app.loadParquetFile(name, buffer);
+      console.log('Loaded as table:', tableName);
+
+      // Verify metadata was stored
+      const metadata = app.getTableMetadata(tableName);
+      console.log('Metadata for', tableName, ':', metadata);
+
       successCount++;
     } catch (error) {
       errorCount++;
