@@ -81,6 +81,59 @@ export async function handleFileUpload(file) {
 }
 
 /**
+ * Sanitize filename to create SQL-safe table name
+ * @param {string} filename - Original filename
+ * @returns {string} - Sanitized table name
+ */
+export function sanitizeTableName(filename) {
+  // Remove .parquet extension if present
+  let name = filename.replace(/\.parquet$/i, '');
+
+  // Convert to lowercase
+  name = name.toLowerCase();
+
+  // Replace non-alphanumeric characters (except underscores) with underscores
+  name = name.replace(/[^a-z0-9_]/g, '_');
+
+  // Remove multiple consecutive underscores
+  name = name.replace(/_+/g, '_');
+
+  // Remove leading/trailing underscores
+  name = name.replace(/^_+|_+$/g, '');
+
+  // If empty or only special chars, use fallback name
+  if (name.length === 0) {
+    name = 'table';
+  }
+
+  return name;
+}
+
+/**
+ * Generate unique table name by appending suffix if needed
+ * @param {string} baseName - Base table name
+ * @param {string[]} existingNames - Array of existing table names
+ * @returns {string} - Unique table name
+ */
+export function generateUniqueTableName(baseName, existingNames) {
+  // If base name doesn't exist, use it
+  if (!existingNames.includes(baseName)) {
+    return baseName;
+  }
+
+  // Find next available suffix
+  let suffix = 2;
+  let candidate = `${baseName}_${suffix}`;
+
+  while (existingNames.includes(candidate)) {
+    suffix++;
+    candidate = `${baseName}_${suffix}`;
+  }
+
+  return candidate;
+}
+
+/**
  * DuckDB Application class for managing database operations
  */
 export class DuckDBApp {
@@ -140,14 +193,37 @@ export class DuckDBApp {
    * Load a parquet file into DuckDB
    * @param {string} fileName - Name of the file
    * @param {ArrayBuffer} buffer - File content
+   * @returns {Promise<string>} - The sanitized table name
    */
   async loadParquetFile(fileName, buffer) {
     if (!this.initialized) {
       throw new Error('DuckDB not initialized');
     }
 
+    // Sanitize table name
+    const baseName = sanitizeTableName(fileName);
+    const existingNames = this.loadedFiles.map(f => f.tableName);
+    const tableName = generateUniqueTableName(baseName, existingNames);
+
+    // Register file buffer
     await this.db.registerFileBuffer(fileName, new Uint8Array(buffer));
-    this.loadedFiles.push(fileName);
+
+    // Create view with sanitized name
+    await this.conn.query(`CREATE VIEW ${tableName} AS SELECT * FROM '${fileName}'`);
+
+    // Get statistics
+    const stats = await this.getFileStatistics(fileName);
+
+    // Store metadata
+    this.loadedFiles.push({
+      tableName,
+      originalName: fileName,
+      rowCount: stats.rowCount,
+      columnCount: stats.columnCount,
+      uploadedAt: Date.now()
+    });
+
+    return tableName;
   }
 
   /**
@@ -192,11 +268,96 @@ export class DuckDBApp {
   }
 
   /**
-   * Get list of loaded files
+   * Get list of loaded files (legacy compatibility)
    * @returns {string[]}
    */
   getLoadedFiles() {
+    return this.loadedFiles.map(f => f.tableName);
+  }
+
+  /**
+   * Get metadata for all loaded tables
+   * @returns {Array<Object>}
+   */
+  getAllTablesMetadata() {
     return [...this.loadedFiles];
+  }
+
+  /**
+   * Get metadata for a specific table
+   * @param {string} tableName - Name of the table
+   * @returns {Object|undefined}
+   */
+  getTableMetadata(tableName) {
+    return this.loadedFiles.find(f => f.tableName === tableName);
+  }
+
+  /**
+   * Rename a table
+   * @param {string} oldName - Current table name
+   * @param {string} newName - New table name (will be sanitized)
+   * @returns {Promise<string>} - The sanitized new name
+   */
+  async renameTable(oldName, newName) {
+    // Validate old name exists
+    const fileIndex = this.loadedFiles.findIndex(f => f.tableName === oldName);
+    if (fileIndex === -1) {
+      throw new Error(`Table '${oldName}' not found`);
+    }
+
+    // Sanitize new name
+    const sanitizedNewName = sanitizeTableName(newName + '.parquet');
+
+    // Check for conflicts (excluding current table)
+    const existingNames = this.loadedFiles
+      .filter((_, i) => i !== fileIndex)
+      .map(f => f.tableName);
+
+    if (existingNames.includes(sanitizedNewName)) {
+      throw new Error(`Table name '${sanitizedNewName}' already exists`);
+    }
+
+    // Get original filename
+    const originalName = this.loadedFiles[fileIndex].originalName;
+
+    // Drop old view and create new view
+    await this.conn.query(`DROP VIEW IF EXISTS ${oldName}`);
+    await this.conn.query(`CREATE VIEW ${sanitizedNewName} AS SELECT * FROM '${originalName}'`);
+
+    // Update metadata
+    this.loadedFiles[fileIndex].tableName = sanitizedNewName;
+
+    return sanitizedNewName;
+  }
+
+  /**
+   * Remove a table
+   * @param {string} tableName - Name of the table to remove
+   */
+  async removeTable(tableName) {
+    const fileIndex = this.loadedFiles.findIndex(f => f.tableName === tableName);
+    if (fileIndex === -1) {
+      throw new Error(`Table '${tableName}' not found`);
+    }
+
+    // Drop view
+    await this.conn.query(`DROP VIEW IF EXISTS ${tableName}`);
+
+    // Remove from metadata
+    this.loadedFiles.splice(fileIndex, 1);
+  }
+
+  /**
+   * Clear all loaded tables
+   */
+  async clearAllTables() {
+    // Drop all views
+    for (const file of this.loadedFiles) {
+      await this.conn.query(`DROP VIEW IF EXISTS ${file.tableName}`);
+    }
+
+    // Clear metadata
+    this.loadedFiles = [];
   }
 
   /**
