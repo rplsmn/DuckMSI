@@ -35,10 +35,10 @@ db = {
 
 conn = db.connect()
 
-// Status indicator
+// Status indicator - small green check
 viewof status = {
-  const div = html`<div class="status ready">DuckDB Ready</div>`;
-  return div;
+  const span = html`<span class="status-indicator"><span style="color: #28a745; font-size: 14px;">✓</span> DuckDB Ready</span>`;
+  return span;
 }
 ```
 
@@ -158,9 +158,16 @@ viewof sqlQuery = Inputs.textarea({
   monospace: true
 })
 
-// Execute button
+// Mutable variable to store the query to execute
+mutable lastExecutedQuery = ""
+
+// Execute button - updates mutable when clicked
 viewof executeClicked = Inputs.button("Execute Query", {
-  disabled: !loadedFile
+  disabled: !loadedFile,
+  reduce: () => {
+    mutable lastExecutedQuery = sqlQuery;
+    return Math.random(); // Return random value to trigger reactivity
+  }
 })
 ```
 :::
@@ -176,13 +183,13 @@ queryResults = {
   // Trigger on button click
   executeClicked;
 
-  if (!loadedFile || !sqlQuery.trim()) {
+  if (!loadedFile || !lastExecutedQuery.trim()) {
     return { columns: [], rows: [], error: null, message: "Upload a file and enter a query to see results." };
   }
 
   try {
     const connection = await conn;
-    const result = await connection.query(sqlQuery);
+    const result = await connection.query(lastExecutedQuery);
     const data = result.toArray();
 
     if (data.length === 0) {
@@ -212,21 +219,31 @@ queryResults = {
     return html`<div class="message">No results to display.</div>`;
   }
 
-  // Build table
-  const table = html`<table class="results-table">
-    <thead>
-      <tr>
-        ${queryResults.columns.map(col => html`<th>${col}</th>`)}
-      </tr>
-    </thead>
-    <tbody>
-      ${queryResults.rows.map(row => html`<tr>
-        ${row.map(cell => html`<td>${cell !== null && cell !== undefined ? String(cell) : 'NULL'}</td>`)}
-      </tr>`)}
-    </tbody>
-  </table>`;
+  // Convert rows array back to array of objects for proper table display
+  const data = queryResults.rows.map(row => {
+    const obj = {};
+    queryResults.columns.forEach((col, idx) => {
+      obj[col] = row[idx];
+    });
+    return obj;
+  });
 
-  return html`<div class="results-container">${table}</div>`;
+  // Use Observable's built-in table display with custom styling
+  return html`<div class="results-container">
+    ${Inputs.table(data, {
+      rows: 50,
+      layout: "auto",
+      format: {
+        // Format all columns to handle null values
+        ...Object.fromEntries(
+          queryResults.columns.map(col => [
+            col,
+            val => val !== null && val !== undefined ? String(val) : 'NULL'
+          ])
+        )
+      }
+    })}
+  </div>`;
 }
 
 // Row count

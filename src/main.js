@@ -137,12 +137,12 @@ async function executeQuery() {
  */
 async function init() {
   try {
-    setStatus('Initializing DuckDB...', 'loading');
+    setStatus('Initializing...', 'loading');
     app = await getApp();
     setStatus('DuckDB Ready', 'ready');
     executeBtn.disabled = false;
   } catch (error) {
-    setStatus(`Failed to initialize: ${error.message}`, 'loading');
+    setStatus(`Failed: ${error.message}`, 'loading');
     console.error('Failed to initialize DuckDB:', error);
   }
 }
