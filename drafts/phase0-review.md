@@ -7,4 +7,4 @@ Review identified the following bugs :
 
 # Both versions
 
-- The "Duckdb loaded" banner should be a simple "green check", it's too large 
+- The "DuckDB loaded" banner should be a simple "green check", it's too large 
