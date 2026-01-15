@@ -219,39 +219,31 @@ queryResults = {
     return html`<div class="message">No results to display.</div>`;
   }
 
-  // Build table with explicit DOM construction
-  const container = document.createElement('div');
-  container.className = 'results-container';
-
-  const table = document.createElement('table');
-  table.className = 'results-table';
-
-  // Create header
-  const thead = document.createElement('thead');
-  const headerRow = document.createElement('tr');
-  queryResults.columns.forEach(col => {
-    const th = document.createElement('th');
-    th.textContent = col;
-    headerRow.appendChild(th);
-  });
-  thead.appendChild(headerRow);
-  table.appendChild(thead);
-
-  // Create body
-  const tbody = document.createElement('tbody');
-  queryResults.rows.forEach(row => {
-    const tr = document.createElement('tr');
-    row.forEach(cell => {
-      const td = document.createElement('td');
-      td.textContent = cell !== null && cell !== undefined ? String(cell) : 'NULL';
-      tr.appendChild(td);
+  // Convert rows array back to array of objects for proper table display
+  const data = queryResults.rows.map(row => {
+    const obj = {};
+    queryResults.columns.forEach((col, idx) => {
+      obj[col] = row[idx];
     });
-    tbody.appendChild(tr);
+    return obj;
   });
-  table.appendChild(tbody);
 
-  container.appendChild(table);
-  return container;
+  // Use Observable's built-in table display with custom styling
+  return html`<div class="results-container">
+    ${Inputs.table(data, {
+      rows: 50,
+      layout: "auto",
+      format: {
+        // Format all columns to handle null values
+        ...Object.fromEntries(
+          queryResults.columns.map(col => [
+            col,
+            val => val !== null && val !== undefined ? String(val) : 'NULL'
+          ])
+        )
+      }
+    })}
+  </div>`;
 }
 
 // Row count
