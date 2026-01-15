@@ -6,6 +6,10 @@ const dropZone = document.getElementById('drop-zone');
 const uploadBtn = document.getElementById('upload-btn');
 const fileInput = document.getElementById('file-input');
 const loadedFilesEl = document.getElementById('loaded-files');
+const diagnosticsDashboard = document.getElementById('diagnostics-dashboard');
+const statRows = document.getElementById('stat-rows');
+const statColumns = document.getElementById('stat-columns');
+const statUnique = document.getElementById('stat-unique');
 const sqlInput = document.getElementById('sql-input');
 const executeBtn = document.getElementById('execute-btn');
 const resultsBox = document.getElementById('results-box');
@@ -64,6 +68,27 @@ function updateLoadedFiles() {
 }
 
 /**
+ * Display file statistics in the diagnostics dashboard
+ */
+async function displayFileStatistics(fileName) {
+  try {
+    const stats = await app.getFileStatistics(fileName);
+
+    // Update the value boxes
+    statRows.textContent = stats.rowCount.toLocaleString();
+    statColumns.textContent = stats.columnCount.toLocaleString();
+    statUnique.textContent = stats.uniqueRowCount.toLocaleString();
+
+    // Show the diagnostics dashboard
+    diagnosticsDashboard.classList.add('visible');
+  } catch (error) {
+    console.error('Failed to get file statistics:', error);
+    // Hide dashboard on error
+    diagnosticsDashboard.classList.remove('visible');
+  }
+}
+
+/**
  * Handle file selection/drop
  */
 async function processFile(file) {
@@ -71,6 +96,10 @@ async function processFile(file) {
     const { name, buffer } = await handleFileUpload(file);
     await app.loadParquetFile(name, buffer);
     updateLoadedFiles();
+
+    // Get and display file statistics
+    await displayFileStatistics(name);
+
     displaySuccess(`Successfully loaded ${name}. You can now query it with: SELECT * FROM '${name}' LIMIT 10`);
     sqlInput.value = `SELECT * FROM '${name}' LIMIT 10`;
   } catch (error) {
