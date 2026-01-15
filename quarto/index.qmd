@@ -78,6 +78,62 @@ loadedFile = {
   }
   return html`<div class="file-hint">No file loaded yet. Upload a .parquet file to get started.</div>`;
 }
+
+// Calculate file statistics
+fileStats = {
+  if (!loadedFile) return null;
+
+  try {
+    const connection = await conn;
+
+    // Get row count
+    const countResult = await connection.query(`SELECT COUNT(*) as count FROM '${loadedFile}'`);
+    const rowCount = countResult.toArray()[0].count;
+
+    // Get column information
+    const tableInfoResult = await connection.query(`DESCRIBE SELECT * FROM '${loadedFile}'`);
+    const tableInfo = tableInfoResult.toArray();
+    const columnCount = tableInfo.length;
+
+    // Get unique row count
+    const columns = tableInfo.map(col => col.column_name).join(', ');
+    const uniqueResult = await connection.query(`SELECT COUNT(*) as count FROM (SELECT DISTINCT ${columns} FROM '${loadedFile}')`);
+    const uniqueRowCount = uniqueResult.toArray()[0].count;
+
+    return {
+      rowCount: Number(rowCount),
+      columnCount,
+      uniqueRowCount: Number(uniqueRowCount)
+    };
+  } catch (e) {
+    console.error('Failed to get file statistics:', e);
+    return null;
+  }
+}
+
+// Display diagnostics dashboard
+{
+  if (fileStats) {
+    return html`<div class="diagnostics-dashboard">
+      <div class="value-box row-count">
+        <div class="value-box-label">Total Rows</div>
+        <div class="value-box-value">${fileStats.rowCount.toLocaleString()}</div>
+        <div class="value-box-sublabel">records in dataset</div>
+      </div>
+      <div class="value-box column-count">
+        <div class="value-box-label">Columns</div>
+        <div class="value-box-value">${fileStats.columnCount.toLocaleString()}</div>
+        <div class="value-box-sublabel">fields available</div>
+      </div>
+      <div class="value-box unique-count">
+        <div class="value-box-label">Unique Rows</div>
+        <div class="value-box-value">${fileStats.uniqueRowCount.toLocaleString()}</div>
+        <div class="value-box-sublabel">distinct observations</div>
+      </div>
+    </div>`;
+  }
+  return html``;
+}
 ```
 :::
 
