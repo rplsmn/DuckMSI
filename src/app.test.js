@@ -190,4 +190,65 @@ describe('DuckDBApp', () => {
       expect(info[0].column_name).toBe('id');
     });
   });
+
+  describe('getFileStatistics', () => {
+    it('should return row count, column count, and unique row count', async () => {
+      // Mock the responses for different queries
+      const mockCountResult = {
+        toArray: vi.fn().mockReturnValue([{ count: 100 }])
+      };
+      const mockTableInfo = {
+        toArray: vi.fn().mockReturnValue([
+          { column_name: 'id', column_type: 'INTEGER' },
+          { column_name: 'name', column_type: 'VARCHAR' }
+        ])
+      };
+      const mockUniqueResult = {
+        toArray: vi.fn().mockReturnValue([{ count: 85 }])
+      };
+
+      mockConn.query
+        .mockResolvedValueOnce(mockCountResult) // First call: row count
+        .mockResolvedValueOnce(mockTableInfo)    // Second call: table info (DESCRIBE)
+        .mockResolvedValueOnce(mockUniqueResult); // Third call: unique count
+
+      const stats = await app.getFileStatistics('test.parquet');
+
+      expect(stats).toEqual({
+        rowCount: 100,
+        columnCount: 2,
+        uniqueRowCount: 85
+      });
+      expect(mockConn.query).toHaveBeenCalledTimes(3);
+    });
+
+    it('should throw error if not initialized', async () => {
+      app.initialized = false;
+      await expect(app.getFileStatistics('test.parquet'))
+        .rejects.toThrow('DuckDB not initialized');
+    });
+
+    it('should handle files with all unique rows', async () => {
+      const mockCountResult = {
+        toArray: vi.fn().mockReturnValue([{ count: 50 }])
+      };
+      const mockTableInfo = {
+        toArray: vi.fn().mockReturnValue([
+          { column_name: 'id', column_type: 'INTEGER' }
+        ])
+      };
+      const mockUniqueResult = {
+        toArray: vi.fn().mockReturnValue([{ count: 50 }])
+      };
+
+      mockConn.query
+        .mockResolvedValueOnce(mockCountResult)
+        .mockResolvedValueOnce(mockTableInfo)
+        .mockResolvedValueOnce(mockUniqueResult);
+
+      const stats = await app.getFileStatistics('test.parquet');
+
+      expect(stats.rowCount).toBe(stats.uniqueRowCount);
+    });
+  });
 });

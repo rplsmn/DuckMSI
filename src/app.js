@@ -161,6 +161,37 @@ export class DuckDBApp {
   }
 
   /**
+   * Get file statistics (row count, column count, unique row count)
+   * @param {string} fileName - Name of the parquet file
+   * @returns {Promise<{rowCount: number, columnCount: number, uniqueRowCount: number}>}
+   */
+  async getFileStatistics(fileName) {
+    if (!this.initialized) {
+      throw new Error('DuckDB not initialized');
+    }
+
+    // Get row count
+    const countResult = await this.conn.query(`SELECT COUNT(*) as count FROM '${fileName}'`);
+    const rowCount = countResult.toArray()[0].count;
+
+    // Get column information
+    const tableInfo = await this.getTableInfo(fileName);
+    const columnCount = tableInfo.length;
+
+    // Get unique row count (distinct observations)
+    // We need to get all column names first to build the DISTINCT query
+    const columns = tableInfo.map(col => col.column_name).join(', ');
+    const uniqueResult = await this.conn.query(`SELECT COUNT(*) as count FROM (SELECT DISTINCT ${columns} FROM '${fileName}')`);
+    const uniqueRowCount = uniqueResult.toArray()[0].count;
+
+    return {
+      rowCount: Number(rowCount),
+      columnCount,
+      uniqueRowCount: Number(uniqueRowCount)
+    };
+  }
+
+  /**
    * Get list of loaded files
    * @returns {string[]}
    */
