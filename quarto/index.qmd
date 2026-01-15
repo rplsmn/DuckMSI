@@ -158,16 +158,17 @@ viewof sqlQuery = Inputs.textarea({
   monospace: true
 })
 
-// Execute button
-viewof executeClicked = Inputs.button("Execute Query", {
-  disabled: !loadedFile
-})
+// Mutable variable to store the query to execute
+mutable lastExecutedQuery = ""
 
-// Capture SQL query when button is clicked
-sqlToExecute = {
-  executeClicked; // Trigger on button click
-  return sqlQuery; // Capture current value
-}
+// Execute button - updates mutable when clicked
+viewof executeClicked = Inputs.button("Execute Query", {
+  disabled: !loadedFile,
+  reduce: () => {
+    mutable lastExecutedQuery = sqlQuery;
+    return Math.random(); // Return random value to trigger reactivity
+  }
+})
 ```
 :::
 
@@ -179,13 +180,16 @@ sqlToExecute = {
 
 // Execute query and get results
 queryResults = {
-  if (!loadedFile || !sqlToExecute.trim()) {
+  // Trigger on button click
+  executeClicked;
+
+  if (!loadedFile || !lastExecutedQuery.trim()) {
     return { columns: [], rows: [], error: null, message: "Upload a file and enter a query to see results." };
   }
 
   try {
     const connection = await conn;
-    const result = await connection.query(sqlToExecute);
+    const result = await connection.query(lastExecutedQuery);
     const data = result.toArray();
 
     if (data.length === 0) {
