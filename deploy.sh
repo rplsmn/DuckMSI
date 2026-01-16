@@ -10,12 +10,7 @@
 set -e  # Exit on error
 
 # Parse arguments
-BUILD_TYPE="quarto"
-if [ "$1" = "--vite" ]; then
-  BUILD_TYPE="vite"
-elif [ "$1" = "--quarto" ]; then
-  BUILD_TYPE="quarto"
-fi
+BUILD_TYPE="vite"
 
 # Get the next deployment tag number
 LAST_TAG=$(git tag -l "deploy-*" | sed 's/deploy-//' | sort -n | tail -1)
@@ -41,15 +36,9 @@ Build: ${BUILD_TYPE}
 URL: https://rplsmn.github.io/DuckMSI/"
 
 # Build based on type
-if [ "$BUILD_TYPE" = "quarto" ]; then
-  echo "🏗️  Building Quarto project..."
-  quarto render quarto/
-  DIST_DIR="quarto/_site"
-else
-  echo "🏗️  Building Vite project..."
-  npm run build
-  DIST_DIR="dist"
-fi
+echo "🏗️  Building Vite project..."
+npm run build
+DIST_DIR="dist"
 
 echo "📦 Navigating to ${DIST_DIR} folder..."
 cd "$DIST_DIR"
@@ -70,17 +59,11 @@ git commit -m "Deploy to GitHub Pages (${BUILD_TYPE}) - $(date '+%Y-%m-%d %H:%M:
 
 # Get remote URL from origin (works with both SSH and HTTPS)
 REMOTE_URL=$(cd .. && git remote get-url origin)
-if [ "$BUILD_TYPE" = "quarto" ]; then
-  REMOTE_URL=$(cd ../.. && git remote get-url origin)
-fi
 
 echo "🚀 Pushing to gh-pages branch..."
 git push -f "$REMOTE_URL" HEAD:gh-pages
 
 cd ..
-if [ "$BUILD_TYPE" = "quarto" ]; then
-  cd ..
-fi
 
 echo "🏷️  Pushing deployment tag..."
 git push origin "${DEPLOY_TAG}"

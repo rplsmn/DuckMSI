@@ -8,3 +8,6 @@ dist/
 quarto/_site/
 quarto/.quarto/
 .quarto/
+
+# Clause local settings
+settings.local.json
