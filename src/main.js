@@ -26,16 +26,20 @@ function setStatus(message, type = 'loading') {
 /**
  * Display results in the results box
  */
+let lastQueryResults = null;
 function displayResults(data) {
   resultsBox.innerHTML = '';
-
+  lastQueryResults = data;
   if (data.rows.length === 0) {
     resultsBox.innerHTML = '<p class="message">Query returned no results.</p>';
+    document.getElementById('export-btn').style.display = 'none';
+    document.getElementById('export-btn').disabled = true;
     return;
   }
-
   const table = createResultsTable(data);
   resultsBox.appendChild(table);
+  document.getElementById('export-btn').style.display = '';
+  document.getElementById('export-btn').disabled = false;
 }
 
 /**
@@ -58,11 +62,19 @@ function displaySuccess(message) {
 function updateFileListDisplay() {
   const files = app.getAllTablesMetadata();
 
+  // Show/hide SQL and results sections based on file upload
+  const sqlSection = document.getElementById('sql-section');
+  const resultsSection = document.getElementById('results-section');
   if (files.length === 0) {
     fileListBody.innerHTML = '<tr><td colspan="5" class="empty-message">No files loaded</td></tr>';
     clearAllBtn.classList.remove('visible');
     diagnosticsDashboard.classList.remove('visible');
+    if (sqlSection) sqlSection.style.display = 'none';
+    if (resultsSection) resultsSection.style.display = 'none';
     return;
+  } else {
+    if (sqlSection) sqlSection.style.display = '';
+    if (resultsSection) resultsSection.style.display = '';
   }
 
   fileListBody.innerHTML = files.map(file => {
@@ -331,6 +343,31 @@ clearAllBtn.addEventListener('click', clearAllFiles);
 
 // Execute button click
 executeBtn.addEventListener('click', executeQuery);
+
+// Export Results button click
+const exportBtn = document.getElementById('export-btn');
+exportBtn.addEventListener('click', () => {
+  if (!lastQueryResults || !lastQueryResults.columns || lastQueryResults.rows.length === 0) return;
+  let defaultName = 'DuckPMSI-results';
+  let filename = prompt('Export results as CSV. Enter filename:', defaultName);
+  if (!filename) filename = defaultName;
+  if (!filename.endsWith('.csv')) filename += '.csv';
+  // Convert results to CSV
+  const cols = lastQueryResults.columns;
+  const rows = lastQueryResults.rows;
+  const csv = [cols.join(',')].concat(rows.map(r => r.map(cell => {
+    if (cell === null || cell === undefined) return '';
+    const str = String(cell);
+    return str.includes(',') || str.includes('"') || str.includes('\n') ? '"' + str.replace(/"/g, '""') + '"' : str;
+  }).join(','))).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+});
 
 // Execute on Ctrl+Enter
 sqlInput.addEventListener('keydown', (e) => {
