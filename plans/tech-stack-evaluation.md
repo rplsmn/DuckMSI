@@ -677,6 +677,225 @@ The complexity doesn't justify the benefit for this project:
 
 ---
 
+## 11. Visual SQL Query Builder: Critical Analysis
+
+**Question**: Should we build a visual drag-and-drop query builder so users don't need to write SQL?
+
+### What Exists Today
+
+| Tool | Type | Client-Side? | Full SQL? | Status |
+|------|------|--------------|-----------|--------|
+| [React Query Builder](https://react-querybuilder.js.org/) | WHERE clause builder | Yes | **No** - only filters | Active |
+| [React Awesome Query Builder](https://github.com/ukrbublik/react-awesome-query-builder) | Filter builder | Yes | **No** - only WHERE | Active |
+| [Metabase](https://www.metabase.com/) | Full BI tool | **No** - needs server | Partial | "Query builder is quite basic" |
+| [DBeaver](https://dbeaver.io/) | Desktop app | **No** - desktop | Yes | Not embeddable |
+| [Web-VQD](https://github.com/swapnilmj/web-vqd) | Visual query designer | Yes | SELECT only | MySQL only, outdated |
+| [Azimutt](https://azimutt.app/) | Schema explorer | Partial | No - exploration only | Active |
+
+**Key finding**: There is **no existing pure client-side visual query builder** that handles full SQL (JOINs, GROUP BY, aggregations, window functions). The closest tools are:
+
+1. **Filter builders** (react-querybuilder): Only generate WHERE clauses
+2. **Server-dependent tools** (Metabase): Violate your privacy requirement
+3. **Desktop apps** (DBeaver): Violate your web-only requirement
+
+### The Honest Assessment: Should You Build One?
+
+**Short answer: No, not as a primary investment. Here's why:**
+
+#### 1. Scope is Massive
+
+A visual query builder that handles:
+- Table selection with schema awareness
+- JOIN configuration (INNER, LEFT, RIGHT, CROSS)
+- Column selection with aliases
+- WHERE clause construction
+- GROUP BY with aggregations (COUNT, SUM, AVG, etc.)
+- HAVING clauses
+- ORDER BY with direction
+- LIMIT/OFFSET
+- Subqueries
+- Window functions
+
+...is a **multi-month to multi-year project**. Even Metabase, backed by a funded company, has a query builder described as "quite basic" where users "often need to fall back to writing SQL."
+
+#### 2. Your Users Are Analysts
+
+Hospital claims analysts work with data professionally. They either:
+- Already know SQL (most likely)
+- Can learn basic SQL with good templates and autocomplete
+- Use tools like SAS, R, or Python that they'd need to translate anyway
+
+A visual query builder optimizes for users who *can't* write SQL. But your users *can*—they just want it to be *easier*.
+
+#### 3. Query Templates Solve 80% of the Problem
+
+Phase 3 (Query Templates) addresses the real pain point:
+
+```
+User thought: "I don't want to write SQL from scratch every time"
+NOT: "I can't write SQL at all"
+```
+
+Pre-built templates for:
+- Claims by month/year
+- Top diagnoses by frequency
+- Patient demographics
+- Cost summaries by category
+- Missing data checks
+
+...cover the common analyses without requiring users to build queries visually.
+
+#### 4. Autocomplete Solves Another 15%
+
+CodeMirror + DuckDB autocomplete (Section 10) addresses:
+- "What tables are loaded?"
+- "What columns does this table have?"
+- "What's the correct syntax?"
+
+This is cheaper to build and more useful for SQL-capable users.
+
+### What Might Be Worth Building (Smaller Scope)
+
+Instead of a full visual query builder, consider these **focused alternatives**:
+
+#### Option A: Filter Assistant (Low Effort)
+
+A simple panel that helps construct WHERE clauses:
+
+```
+┌─────────────────────────────────────────┐
+│ Filter Assistant                        │
+├─────────────────────────────────────────┤
+│ Table: [fixe ▼]                         │
+│                                         │
+│ Add Filter:                             │
+│ [column ▼] [= ▼] [value    ] [+ Add]   │
+│                                         │
+│ Active Filters:                         │
+│ • patient_id = 12345          [×]       │
+│ • claim_date > '2024-01-01'   [×]       │
+│                                         │
+│ Generated WHERE:                        │
+│ WHERE patient_id = 12345                │
+│   AND claim_date > '2024-01-01'         │
+│                                         │
+│ [Insert into Query]                     │
+└─────────────────────────────────────────┘
+```
+
+**Effort**: Medium (2-3 weeks)
+**Value**: High for filter-heavy workflows
+**Technology**: React Query Builder could work here
+
+#### Option B: Schema Explorer with Click-to-Insert (Low Effort)
+
+Show loaded tables and columns; click to insert into query:
+
+```
+┌──────────────────────┐  ┌─────────────────────────────┐
+│ Tables               │  │ SELECT                      │
+├──────────────────────┤  │   |                         │
+│ ▼ fixe (50,000 rows) │  │ FROM fixe                   │
+│   • patient_id (INT) │  │                             │
+│   • claim_date (DATE)│  │                             │
+│   • amount (DECIMAL) │  │                             │
+│ ▶ diag               │  │                             │
+│ ▶ acte               │  │                             │
+└──────────────────────┘  └─────────────────────────────┘
+        Click column → inserts "fixe.patient_id" at cursor
+```
+
+**Effort**: Low (1-2 weeks)
+**Value**: High for schema discovery
+**Technology**: Custom component + CodeMirror integration
+
+#### Option C: Natural Language to SQL via WebLLM (Experimental)
+
+[WebLLM](https://webllm.mlc.ai/) runs LLMs entirely in-browser via WebGPU. No server, no data leaves the device.
+
+```
+User: "Show me total claims by month for 2024"
+       ↓ (WebLLM with schema context)
+Generated: SELECT DATE_TRUNC('month', claim_date) as month,
+                  COUNT(*) as total_claims
+           FROM fixe
+           WHERE claim_date >= '2024-01-01'
+           GROUP BY 1
+           ORDER BY 1
+```
+
+**Pros**:
+- Preserves privacy (runs locally)
+- Handles arbitrary queries
+- Natural interface for non-SQL users
+
+**Cons**:
+- Requires WebGPU (modern browsers only)
+- Large model download (~2-4GB)
+- Quality depends on model and schema context
+- Security risk: LLM-generated SQL can be exploited ([2025 research](https://arxiv.org/abs/2503.05445) shows 0.44% poisoned data → 79% attack success)
+
+**Verdict**: Interesting for Phase 8+, but experimental and has security implications.
+
+### Recommendation: Don't Build a Visual Query Builder
+
+**Instead, invest in this priority order:**
+
+| Priority | Feature | Phase | Effort | Impact |
+|----------|---------|-------|--------|--------|
+| 1 | Query Templates (pre-built analyses) | Phase 3 | Medium | High |
+| 2 | Schema Explorer with click-to-insert | Phase 7 | Low | Medium |
+| 3 | CodeMirror + DuckDB autocomplete | Phase 7 | Medium | High |
+| 4 | Filter Assistant (WHERE builder) | Phase 7 | Medium | Medium |
+| 5 | WebLLM text-to-SQL (experimental) | Phase 8+ | High | Unknown |
+
+**Why this order?**
+
+1. **Templates** give immediate value with known queries
+2. **Schema Explorer** helps users understand their data
+3. **Autocomplete** reduces syntax errors
+4. **Filter Assistant** helps with the most common query modification
+5. **Text-to-SQL** is experimental and has security concerns
+
+### The Privacy Angle: Why Not Just Use Existing Tools?
+
+You asked: *"considering this project's goal and requirements... maybe we'd be better off building some solutions ourselves"*
+
+**The honest answer**: The privacy requirement doesn't *force* you to build a visual query builder. Here's why:
+
+1. **Existing filter builders work client-side**: React Query Builder runs in browser, no server needed
+2. **Schema explorers can be client-side**: Custom component reading DuckDB metadata
+3. **The gap is full visual SQL builders**: These don't exist client-side, but you don't *need* one
+
+The privacy requirement *does* mean:
+- Can't use Metabase (needs server)
+- Can't use cloud-based text-to-SQL APIs
+- Must be careful with WebLLM (model could leak info in unexpected ways)
+
+But these limitations don't create a compelling case for building a full visual query builder. The ROI isn't there.
+
+### Final Verdict
+
+**Don't build a visual SQL query builder.** The scope is enormous, the value is questionable for analyst users, and better alternatives exist:
+
+- Query templates for common analyses
+- Autocomplete for SQL assistance
+- Schema explorer for discovery
+- Filter assistant for WHERE clauses
+
+If you find yourself with months of spare time and a burning desire to build something novel, consider WebLLM text-to-SQL as an experimental Phase 8+ feature. But even then, approach with caution due to security implications.
+
+**Sources**:
+- [React Query Builder](https://react-querybuilder.js.org/)
+- [React Awesome Query Builder](https://github.com/ukrbublik/react-awesome-query-builder)
+- [Metabase Query Builder Limitations](https://trevor.io/blog/metabase-alternatives)
+- [WebLLM](https://webllm.mlc.ai/)
+- [Text-to-SQL Security Research](https://arxiv.org/abs/2503.05445)
+- [Azimutt Schema Explorer](https://azimutt.app/)
+- [SQL Schema Visualizer](https://github.com/sqlhabit/sql_schema_visualizer)
+
+---
+
 ## Appendix: Source Links
 
 ### DuckDB WASM
@@ -730,3 +949,19 @@ The complexity doesn't justify the benefit for this project:
 - [duckplyr Package](https://duckdb.org/2024/04/02/duckplyr)
 - [webR + DuckDB Integration](https://r.iresmi.net/posts/2024/webr/index.html)
 - [duckplyr vs dbplyr Discussion](https://github.com/tidyverse/duckplyr/issues/145)
+
+### Visual Query Builders
+- [React Query Builder](https://react-querybuilder.js.org/)
+- [React Awesome Query Builder](https://github.com/ukrbublik/react-awesome-query-builder)
+- [Metabase Query Builder Limitations](https://trevor.io/blog/metabase-alternatives)
+- [Web-VQD](https://github.com/swapnilmj/web-vqd)
+
+### Schema Visualization
+- [Azimutt Schema Explorer](https://azimutt.app/)
+- [SQL Schema Visualizer](https://github.com/sqlhabit/sql_schema_visualizer)
+- [DHTMLX ERD](https://dhtmlx.com/blog/create-basic-javascript-entity-relationship-diagram-dhtmlx/)
+
+### Text-to-SQL / WebLLM
+- [WebLLM - In-Browser LLM](https://webllm.mlc.ai/)
+- [WebLLM GitHub](https://github.com/mlc-ai/web-llm)
+- [Text-to-SQL Security Research (2025)](https://arxiv.org/abs/2503.05445)

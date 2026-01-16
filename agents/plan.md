@@ -1079,27 +1079,10 @@ Criteria for migration:
 ### SQL Editor Enhancement (Phase 7-8)
 
 Per tech stack evaluation, recommended approach:
+
 - **CodeMirror 6** for lightweight syntax highlighting
 - **DuckDB autocomplete extension** for schema-aware completions
 - **Optional webR console** (Phase 8+) for users who prefer dplyr syntax
-
-### Backend Integration (if requirements change)
-
-If privacy requirements relax:
-
-- Backend API for authentication/authorization
-- Shared query templates across organization
-- Usage analytics and monitoring
-- Pre-processed/cached data
-
-### Desktop App (Electron)
-
-If browser limitations become problematic:
-
-- Native file system access
-- No storage limits
-- Better performance for huge files
-- Offline-first by design
 
 ---
 
@@ -1108,11 +1091,11 @@ If browser limitations become problematic:
 For questions about this plan or project direction:
 
 - Create issue in GitHub repository
-- Tag @rsimon in relevant discussions
+- Tag @rplsmn in relevant discussions
 - Update `agents/implementation-log.md` with learnings and questions
 
 ---
 
 **Last Updated**: 2026-01-16
 **Status**: Phase 1 complete, Phase 2 next
-**Maintainer**: Human in the loop (rsimon)
+**Maintainer**: Human in the loop (@rplsmn)
