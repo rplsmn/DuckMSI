@@ -11,3 +11,6 @@ quarto/.quarto/
 
 # Clause local settings
 settings.local.json
+
+# Claude prompts in files
+claude-drafts/
