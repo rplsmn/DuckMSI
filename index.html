@@ -209,8 +209,6 @@
     /* Diagnostics Dashboard */
     .diagnostics-dashboard {
       display: none;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
       margin-top: 15px;
       padding: 15px;
       background: #f8f9fa;
@@ -218,47 +216,146 @@
     }
 
     .diagnostics-dashboard.visible {
-      display: grid;
+      display: block;
     }
 
-    .value-box {
+    .diagnostics-header {
+      font-weight: 600;
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .diagnostics-table {
+      width: 100%;
+      border-collapse: collapse;
       background: white;
       border-radius: 6px;
-      padding: 15px;
-      text-align: center;
+      overflow: hidden;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      border-left: 4px solid #007bff;
     }
 
-    .value-box.column-count {
-      border-left-color: #28a745;
-    }
-
-    .value-box.unique-count {
-      border-left-color: #ffc107;
-    }
-
-    .value-box-label {
-      font-size: 12px;
-      color: #666;
+    .diagnostics-table th {
+      background: #343a40;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-size: 13px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 8px;
     }
 
-    .value-box-value {
-      font-size: 28px;
-      font-weight: bold;
-      color: #333;
+    .diagnostics-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e9ecef;
+      font-size: 14px;
     }
 
-    .value-box-sublabel {
-      font-size: 11px;
+    .diagnostics-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .diagnostics-table tbody tr:hover {
+      background: #f8f9fa;
+    }
+
+    .diagnostics-table .table-name-col {
+      font-family: monospace;
+      font-weight: 600;
+      color: #007bff;
+    }
+
+    .diagnostics-table .number-col {
+      text-align: right;
+      font-family: 'Consolas', monospace;
+    }
+
+    .diagnostics-table .duplicate-low {
+      color: #28a745;
+      font-weight: 600;
+    }
+
+    .diagnostics-table .duplicate-medium {
+      color: #ffc107;
+      font-weight: 600;
+    }
+
+    .diagnostics-table .duplicate-high {
+      color: #dc3545;
+      font-weight: 600;
+    }
+
+    /* File List Table */
+    .file-list-table {
+      width: 100%;
+      margin-top: 15px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .file-list-table th {
+      background: #e9ecef;
+      padding: 10px;
+      text-align: left;
+      border-bottom: 2px solid #ccc;
+    }
+
+    .file-list-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .file-list-table .table-name {
+      font-family: monospace;
+      font-weight: 600;
+      color: #007bff;
+    }
+
+    .file-list-table .empty-message {
+      text-align: center;
       color: #999;
-      margin-top: 4px;
+      font-style: italic;
+    }
+
+    .btn-small {
+      padding: 4px 8px;
+      font-size: 12px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-right: 4px;
+    }
+
+    .btn-rename {
+      background: #007bff;
+      color: white;
+    }
+
+    .btn-rename:hover {
+      background: #0056b3;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
+    }
+
+    #clear-all-btn {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    #clear-all-btn.visible {
+      display: inline-block;
     }
   </style>
-  <script type="module" crossorigin src="/DuckMSI/assets/index-Dz0MyDm5.js"></script>
+  <script type="module" crossorigin src="/DuckMSI/assets/index-_t3W7oB4.js"></script>
 </head>
 <body>
   <h1>DuckDB WASM SQL Query Tool</h1>
@@ -272,27 +369,45 @@
       <div class="file-upload-area" id="drop-zone">
         <p>Drag and drop a .parquet file here, or</p>
         <button class="upload-btn" id="upload-btn">Choose File</button>
-        <input type="file" id="file-input" accept=".parquet">
+        <input type="file" id="file-input" accept=".parquet" multiple>
       </div>
-      <div id="loaded-files"></div>
+
+      <!-- File List Management -->
+      <div id="file-list-container">
+        <table class="file-list-table">
+          <thead>
+            <tr>
+              <th>Table Name</th>
+              <th>Original File</th>
+              <th>Rows</th>
+              <th>Columns</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="file-list-body">
+            <tr><td colspan="5" class="empty-message">No files loaded</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <button id="clear-all-btn" class="btn-danger">Clear All Files</button>
 
       <!-- File Diagnostics Dashboard -->
       <div id="diagnostics-dashboard" class="diagnostics-dashboard">
-        <div class="value-box row-count">
-          <div class="value-box-label">Total Rows</div>
-          <div class="value-box-value" id="stat-rows">-</div>
-          <div class="value-box-sublabel">records in dataset</div>
-        </div>
-        <div class="value-box column-count">
-          <div class="value-box-label">Columns</div>
-          <div class="value-box-value" id="stat-columns">-</div>
-          <div class="value-box-sublabel">fields available</div>
-        </div>
-        <div class="value-box unique-count">
-          <div class="value-box-label">Unique Rows</div>
-          <div class="value-box-value" id="stat-unique">-</div>
-          <div class="value-box-sublabel">distinct observations</div>
-        </div>
+        <div class="diagnostics-header">File Statistics</div>
+        <table class="diagnostics-table">
+          <thead>
+            <tr>
+              <th>Table Name</th>
+              <th>Total Rows</th>
+              <th>Columns</th>
+              <th>Unique Rows</th>
+              <th>Duplicate %</th>
+            </tr>
+          </thead>
+          <tbody id="diagnostics-body">
+            <tr><td colspan="5" class="empty-message">Upload files to see statistics</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
