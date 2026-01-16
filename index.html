@@ -411,14 +411,14 @@
     </div>
 
     <!-- SQL Input Section -->
-    <div class="section">
+    <div class="section" id="sql-section" style="display:none;">
       <div class="section-title">2. Enter SQL Query</div>
       <textarea id="sql-input" placeholder="SELECT * FROM 'your_file.parquet' LIMIT 10"></textarea>
       <button id="execute-btn" disabled>Execute Query</button>
     </div>
 
     <!-- Results Section -->
-    <div class="section">
+    <div class="section" id="results-section" style="display:none;">
       <div class="section-title">3. Query Results</div>
       <div id="results-box">
         <p class="message">Results will appear here after executing a query.</p>

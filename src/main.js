@@ -62,11 +62,19 @@ function displaySuccess(message) {
 function updateFileListDisplay() {
   const files = app.getAllTablesMetadata();
 
+  // Show/hide SQL and results sections based on file upload
+  const sqlSection = document.getElementById('sql-section');
+  const resultsSection = document.getElementById('results-section');
   if (files.length === 0) {
     fileListBody.innerHTML = '<tr><td colspan="5" class="empty-message">No files loaded</td></tr>';
     clearAllBtn.classList.remove('visible');
     diagnosticsDashboard.classList.remove('visible');
+    if (sqlSection) sqlSection.style.display = 'none';
+    if (resultsSection) resultsSection.style.display = 'none';
     return;
+  } else {
+    if (sqlSection) sqlSection.style.display = '';
+    if (resultsSection) resultsSection.style.display = '';
   }
 
   fileListBody.innerHTML = files.map(file => {
