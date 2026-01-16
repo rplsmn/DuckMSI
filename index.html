@@ -110,7 +110,7 @@
       border-color: #007bff;
     }
 
-    #execute-btn {
+    #execute-btn, .export-btn {
       background: #28a745;
       color: white;
       border: none;
@@ -121,11 +121,11 @@
       margin-top: 10px;
     }
 
-    #execute-btn:hover {
+    #execute-btn:hover, .export-btn:hover {
       background: #218838;
     }
 
-    #execute-btn:disabled {
+    #execute-btn:disabled, .export-btn:disabled {
       background: #ccc;
       cursor: not-allowed;
     }
@@ -355,7 +355,7 @@
       display: inline-block;
     }
   </style>
-  <script type="module" crossorigin src="/DuckMSI/assets/index-_t3W7oB4.js"></script>
+  <script type="module" crossorigin src="/DuckMSI/assets/index-CUaK3N4v.js"></script>
 </head>
 <body>
   <h1>DuckDB WASM SQL Query Tool</h1>
@@ -412,18 +412,19 @@
     </div>
 
     <!-- SQL Input Section -->
-    <div class="section">
+    <div class="section" id="sql-section" style="display:none;">
       <div class="section-title">2. Enter SQL Query</div>
       <textarea id="sql-input" placeholder="SELECT * FROM 'your_file.parquet' LIMIT 10"></textarea>
       <button id="execute-btn" disabled>Execute Query</button>
     </div>
 
     <!-- Results Section -->
-    <div class="section">
+    <div class="section" id="results-section" style="display:none;">
       <div class="section-title">3. Query Results</div>
       <div id="results-box">
         <p class="message">Results will appear here after executing a query.</p>
       </div>
+      <button id="export-btn" class="export-btn" style="display:none;" disabled>Export Results</button>
     </div>
   </div>
 
