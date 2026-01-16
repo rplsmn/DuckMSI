@@ -110,7 +110,7 @@
       border-color: #007bff;
     }
 
-    #execute-btn {
+    #execute-btn, .export-btn {
       background: #28a745;
       color: white;
       border: none;
@@ -121,11 +121,11 @@
       margin-top: 10px;
     }
 
-    #execute-btn:hover {
+    #execute-btn:hover, .export-btn:hover {
       background: #218838;
     }
 
-    #execute-btn:disabled {
+    #execute-btn:disabled, .export-btn:disabled {
       background: #ccc;
       cursor: not-allowed;
     }
@@ -423,7 +423,7 @@
       <div id="results-box">
         <p class="message">Results will appear here after executing a query.</p>
       </div>
-      <button id="export-btn" style="display:none;" disabled>Export Results</button>
+      <button id="export-btn" class="export-btn" style="display:none;" disabled>Export Results</button>
     </div>
   </div>
 
