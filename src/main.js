@@ -5,11 +5,10 @@ const statusEl = document.getElementById('status');
 const dropZone = document.getElementById('drop-zone');
 const uploadBtn = document.getElementById('upload-btn');
 const fileInput = document.getElementById('file-input');
-const loadedFilesEl = document.getElementById('loaded-files');
+const fileListBody = document.getElementById('file-list-body');
+const clearAllBtn = document.getElementById('clear-all-btn');
 const diagnosticsDashboard = document.getElementById('diagnostics-dashboard');
-const statRows = document.getElementById('stat-rows');
-const statColumns = document.getElementById('stat-columns');
-const statUnique = document.getElementById('stat-unique');
+const diagnosticsBody = document.getElementById('diagnostics-body');
 const sqlInput = document.getElementById('sql-input');
 const executeBtn = document.getElementById('execute-btn');
 const resultsBox = document.getElementById('results-box');
@@ -54,56 +53,202 @@ function displaySuccess(message) {
 }
 
 /**
- * Update loaded files display
+ * Update file list display
  */
-function updateLoadedFiles() {
-  const files = app.getLoadedFiles();
+function updateFileListDisplay() {
+  const files = app.getAllTablesMetadata();
+
   if (files.length === 0) {
-    loadedFilesEl.innerHTML = '';
+    fileListBody.innerHTML = '<tr><td colspan="5" class="empty-message">No files loaded</td></tr>';
+    clearAllBtn.classList.remove('visible');
+    diagnosticsDashboard.classList.remove('visible');
     return;
   }
 
-  loadedFilesEl.innerHTML = 'Loaded files: ' +
-    files.map(f => `<span class="file-tag">${f}</span>`).join('');
+  fileListBody.innerHTML = files.map(file => {
+    // Defensive checks for undefined values
+    const rowCount = file.rowCount || 0;
+    const columnCount = file.columnCount || 0;
+
+    return `
+      <tr>
+        <td class="table-name">${file.tableName}</td>
+        <td>${file.originalName}</td>
+        <td>${rowCount.toLocaleString()}</td>
+        <td>${columnCount}</td>
+        <td>
+          <button class="btn-small btn-rename" data-table="${file.tableName}">Rename</button>
+          <button class="btn-small btn-danger" data-table="${file.tableName}">Remove</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  clearAllBtn.classList.add('visible');
+
+  // Attach event handlers
+  document.querySelectorAll('.btn-rename').forEach(btn => {
+    btn.addEventListener('click', () => handleRename(btn.dataset.table));
+  });
+
+  document.querySelectorAll('.btn-danger').forEach(btn => {
+    btn.addEventListener('click', () => removeFile(btn.dataset.table));
+  });
+
+  // Update example query
+  updateExampleQuery();
+
+  // Update diagnostics table with all files
+  displayAllFileStatistics();
 }
 
 /**
- * Display file statistics in the diagnostics dashboard
+ * Display statistics for all loaded files in diagnostics table
  */
-async function displayFileStatistics(fileName) {
-  try {
-    const stats = await app.getFileStatistics(fileName);
+function displayAllFileStatistics() {
+  const files = app.getAllTablesMetadata();
 
-    // Update the value boxes
-    statRows.textContent = stats.rowCount.toLocaleString();
-    statColumns.textContent = stats.columnCount.toLocaleString();
-    statUnique.textContent = stats.uniqueRowCount.toLocaleString();
+  console.log('displayAllFileStatistics called, files:', files.length);
 
-    // Show the diagnostics dashboard
-    diagnosticsDashboard.classList.add('visible');
-  } catch (error) {
-    console.error('Failed to get file statistics:', error);
-    // Hide dashboard on error
+  if (files.length === 0) {
+    diagnosticsBody.innerHTML = '<tr><td colspan="5" class="empty-message">Upload files to see statistics</td></tr>';
     diagnosticsDashboard.classList.remove('visible');
+    return;
+  }
+
+  console.log('Showing diagnostics for', files.length, 'files');
+
+  diagnosticsBody.innerHTML = files.map(file => {
+    // Defensive checks for undefined values
+    const rowCount = file.rowCount || 0;
+    const columnCount = file.columnCount || 0;
+    // If uniqueRowCount is undefined, assume no duplicates (uniqueRowCount = rowCount)
+    const uniqueRowCount = file.uniqueRowCount !== undefined ? file.uniqueRowCount : rowCount;
+
+    const duplicatePercent = rowCount > 0
+      ? ((rowCount - uniqueRowCount) / rowCount * 100).toFixed(1)
+      : 0;
+
+    // Color code duplicate percentage
+    let duplicateClass = 'duplicate-low';
+    if (duplicatePercent > 20) duplicateClass = 'duplicate-high';
+    else if (duplicatePercent > 5) duplicateClass = 'duplicate-medium';
+
+    return `
+      <tr>
+        <td class="table-name-col">${file.tableName}</td>
+        <td class="number-col">${rowCount.toLocaleString()}</td>
+        <td class="number-col">${columnCount}</td>
+        <td class="number-col">${uniqueRowCount.toLocaleString()}</td>
+        <td class="number-col ${duplicateClass}">${duplicatePercent}%</td>
+      </tr>
+    `;
+  }).join('');
+
+  diagnosticsDashboard.classList.add('visible');
+}
+
+/**
+ * Handle multiple file uploads
+ */
+async function processFiles(files) {
+  const fileArray = Array.from(files);
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (const file of fileArray) {
+    try {
+      const { name, buffer } = await handleFileUpload(file);
+      console.log('Loading file:', name);
+      const tableName = await app.loadParquetFile(name, buffer);
+      console.log('Loaded as table:', tableName);
+
+      // Verify metadata was stored
+      const metadata = app.getTableMetadata(tableName);
+      console.log('Metadata for', tableName, ':', metadata);
+
+      successCount++;
+    } catch (error) {
+      errorCount++;
+      console.error(`Failed to load ${file.name}:`, error);
+    }
+  }
+
+  // Update UI after all files processed
+  updateFileListDisplay();
+
+  if (successCount > 0) {
+    const tables = app.getAllTablesMetadata();
+    const tableNames = tables.slice(-successCount).map(t => t.tableName).join(', ');
+    displaySuccess(`Successfully loaded ${successCount} file${successCount > 1 ? 's' : ''}: ${tableNames}${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
+  } else {
+    displayError(new Error('Failed to load any files'));
   }
 }
 
 /**
- * Handle file selection/drop
+ * Handle renaming a table
  */
-async function processFile(file) {
+async function handleRename(tableName) {
+  const newName = prompt(`Rename table "${tableName}" to:`, tableName);
+  if (!newName || newName === tableName) return;
+
   try {
-    const { name, buffer } = await handleFileUpload(file);
-    await app.loadParquetFile(name, buffer);
-    updateLoadedFiles();
-
-    // Get and display file statistics
-    await displayFileStatistics(name);
-
-    displaySuccess(`Successfully loaded ${name}. You can now query it with: SELECT * FROM '${name}' LIMIT 10`);
-    sqlInput.value = `SELECT * FROM '${name}' LIMIT 10`;
+    const sanitizedName = await app.renameTable(tableName, newName);
+    displaySuccess(`Renamed "${tableName}" to "${sanitizedName}"`);
+    updateFileListDisplay();
   } catch (error) {
     displayError(error);
+  }
+}
+
+/**
+ * Remove a file
+ */
+async function removeFile(tableName) {
+  if (!confirm(`Remove table "${tableName}"?`)) return;
+
+  try {
+    await app.removeTable(tableName);
+    displaySuccess(`Removed table "${tableName}"`);
+    updateFileListDisplay();
+  } catch (error) {
+    displayError(error);
+  }
+}
+
+/**
+ * Clear all files
+ */
+async function clearAllFiles() {
+  if (!confirm('Remove all loaded files?')) return;
+
+  try {
+    await app.clearAllTables();
+    displaySuccess('All files cleared');
+    updateFileListDisplay();
+    resultsBox.innerHTML = '<p class="message">Results will appear here after executing a query.</p>';
+  } catch (error) {
+    displayError(error);
+  }
+}
+
+/**
+ * Update example query based on loaded files
+ */
+function updateExampleQuery() {
+  const files = app.getAllTablesMetadata();
+
+  if (files.length === 0) {
+    sqlInput.placeholder = "SELECT * FROM 'your_file.parquet' LIMIT 10";
+    return;
+  }
+
+  if (files.length === 1) {
+    sqlInput.value = `SELECT * FROM ${files[0].tableName} LIMIT 10`;
+  } else {
+    // Show example with available tables listed
+    sqlInput.value = `-- Available tables: ${files.map(f => f.tableName).join(', ')}\nSELECT * FROM ${files[0].tableName} LIMIT 10`;
   }
 }
 
@@ -156,9 +301,9 @@ uploadBtn.addEventListener('click', () => {
 
 // File input change
 fileInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    processFile(file);
+  const files = e.target.files;
+  if (files && files.length > 0) {
+    processFiles(files);
   }
 });
 
@@ -175,11 +320,14 @@ dropZone.addEventListener('dragleave', () => {
 dropZone.addEventListener('drop', (e) => {
   e.preventDefault();
   dropZone.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file) {
-    processFile(file);
+  const files = e.dataTransfer.files;
+  if (files && files.length > 0) {
+    processFiles(files);
   }
 });
+
+// Clear all button
+clearAllBtn.addEventListener('click', clearAllFiles);
 
 // Execute button click
 executeBtn.addEventListener('click', executeQuery);

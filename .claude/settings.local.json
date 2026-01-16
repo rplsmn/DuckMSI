@@ -9,7 +9,10 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(gh pr create:*)",
-      "Bash(quarto render:*)"
+      "Bash(quarto render:*)",
+      "Bash(npm test:*)",
+      "Bash(gh pr view:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }
