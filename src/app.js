@@ -1,137 +1,27 @@
 import * as duckdb from '@duckdb/duckdb-wasm';
 
-/**
- * Format query results into a structured format
- * @param {Array} data - Array of row objects
- * @param {number} limit - Maximum number of rows to return
- * @returns {Object} - { columns: string[], rows: any[][] }
- */
-export function formatQueryResults(data, limit = 50) {
-  if (!data || data.length === 0) {
-    return { columns: [], rows: [] };
-  }
+// Import from modules
+import {
+  validateSQL,
+  formatQueryResults,
+  createResultsTable
+} from './modules/database/index.js';
 
-  const columns = Object.keys(data[0]);
-  const rows = data.slice(0, limit).map(row => columns.map(col => row[col]));
+import {
+  sanitizeTableName,
+  generateUniqueTableName,
+  handleFileUpload
+} from './modules/files/index.js';
 
-  return { columns, rows };
-}
-
-/**
- * Validate SQL query string
- * @param {string} sql - SQL query string
- * @returns {boolean} - Whether the SQL is valid
- */
-export function validateSQL(sql) {
-  if (sql === null || sql === undefined) {
-    return false;
-  }
-  const trimmed = String(sql).trim();
-  return trimmed.length > 0;
-}
-
-/**
- * Create an HTML table element from query results
- * @param {Object} data - { columns: string[], rows: any[][] }
- * @returns {HTMLTableElement}
- */
-export function createResultsTable(data) {
-  const table = document.createElement('table');
-  table.className = 'results-table';
-
-  // Create header
-  const thead = document.createElement('thead');
-  const headerRow = document.createElement('tr');
-  for (const col of data.columns) {
-    const th = document.createElement('th');
-    th.textContent = col;
-    headerRow.appendChild(th);
-  }
-  thead.appendChild(headerRow);
-  table.appendChild(thead);
-
-  // Create body
-  const tbody = document.createElement('tbody');
-  for (const row of data.rows) {
-    const tr = document.createElement('tr');
-    for (const cell of row) {
-      const td = document.createElement('td');
-      td.textContent = cell !== null && cell !== undefined ? String(cell) : 'NULL';
-      tr.appendChild(td);
-    }
-    tbody.appendChild(tr);
-  }
-  table.appendChild(tbody);
-
-  return table;
-}
-
-/**
- * Handle file upload and validate parquet file
- * @param {File} file - File object
- * @returns {Promise<{name: string, buffer: ArrayBuffer}>}
- */
-export async function handleFileUpload(file) {
-  if (!file.name.endsWith('.parquet')) {
-    throw new Error('Only .parquet files are supported');
-  }
-
-  const buffer = await file.arrayBuffer();
-  return { name: file.name, buffer };
-}
-
-/**
- * Sanitize filename to create SQL-safe table name
- * @param {string} filename - Original filename
- * @returns {string} - Sanitized table name
- */
-export function sanitizeTableName(filename) {
-  // Remove .parquet extension if present
-  let name = filename.replace(/\.parquet$/i, '');
-
-  // Convert to lowercase
-  name = name.toLowerCase();
-
-  // Replace non-alphanumeric characters (except underscores) with underscores
-  name = name.replace(/[^a-z0-9_]/g, '_');
-
-  // Remove multiple consecutive underscores
-  name = name.replace(/_+/g, '_');
-
-  // Remove leading/trailing underscores
-  name = name.replace(/^_+|_+$/g, '');
-
-  // If empty or only special chars, use fallback name
-  if (name.length === 0) {
-    name = 'table';
-  }
-
-  return name;
-}
-
-/**
- * Generate unique table name by appending suffix if needed
- * @param {string} baseName - Base table name
- * @param {string[]} existingNames - Array of existing table names
- * @returns {string} - Unique table name
- */
-export function generateUniqueTableName(baseName, existingNames) {
-  // If base name doesn't exist, use it
-  if (!existingNames.includes(baseName)) {
-    return baseName;
-  }
-
-  // Find next available suffix
-  let suffix = 2;
-  let candidate = `${baseName}_${suffix}`;
-
-  while (existingNames.includes(candidate)) {
-    suffix++;
-    candidate = `${baseName}_${suffix}`;
-  }
-
-  return candidate;
-}
+// Re-export for backwards compatibility
+export {
+  validateSQL,
+  formatQueryResults,
+  createResultsTable,
+  sanitizeTableName,
+  generateUniqueTableName,
+  handleFileUpload
+};
 
 /**
  * DuckDB Application class for managing database operations
