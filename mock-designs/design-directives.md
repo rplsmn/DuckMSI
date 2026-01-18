@@ -92,6 +92,15 @@ Load via Google Fonts:
   box-shadow:
     0 0 30px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  /* NOTE: Avoid overflow:hidden - it clips tooltips */
+}
+
+/* Apply border-radius to inner elements instead */
+.panel-header {
+  border-radius: 12px 12px 0 0;
+}
+.panel-footer {
+  border-radius: 0 0 12px 12px;
 }
 ```
 
@@ -196,6 +205,60 @@ States:
   color: var(--neon-magenta);
 }
 ```
+
+### Tooltips
+
+Tooltips appear on hover for icon-only buttons. Position them below the button by default to avoid clipping issues.
+
+```css
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: var(--bg-dark);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 100;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+```
+
+**Edge positioning variants:**
+
+```css
+/* For buttons near right edge - align tooltip to the right */
+.tooltip.tooltip-left::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+/* For tooltips that must appear above (e.g., near bottom of viewport) */
+.tooltip.tooltip-above::after {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+```
+
+**Important:** Do NOT use `overflow: hidden` on panels that contain tooltips - it will clip them. Apply `border-radius` directly to header/footer elements instead.
 
 ## Visual Effects
 

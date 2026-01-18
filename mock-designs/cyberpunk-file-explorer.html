@@ -132,7 +132,6 @@
       background: var(--bg-panel);
       border: 1px solid var(--border-color);
       border-radius: 12px;
-      overflow: hidden;
       box-shadow:
         0 0 30px rgba(0, 0, 0, 0.5),
         inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -145,6 +144,7 @@
       padding: 15px 20px;
       background: linear-gradient(180deg, rgba(0, 245, 255, 0.1) 0%, transparent 100%);
       border-bottom: 1px solid var(--border-color);
+      border-radius: 12px 12px 0 0;
     }
 
     .panel-title {
@@ -380,6 +380,7 @@
       padding: 12px 20px;
       background: rgba(0, 0, 0, 0.3);
       border-top: 1px solid var(--border-color);
+      border-radius: 0 0 12px 12px;
       font-size: 11px;
       color: var(--text-muted);
     }
@@ -459,9 +460,10 @@
     .tooltip::after {
       content: attr(data-tooltip);
       position: absolute;
-      bottom: 100%;
+      top: 100%;
       left: 50%;
       transform: translateX(-50%);
+      margin-top: 8px;
       padding: 6px 10px;
       background: var(--bg-dark);
       border: 1px solid var(--neon-cyan);
@@ -471,10 +473,26 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
+      z-index: 100;
     }
 
     .tooltip:hover::after {
       opacity: 1;
+    }
+
+    /* Right-aligned tooltips (for buttons near right edge) */
+    .tooltip.tooltip-left::after {
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+
+    /* Tooltips that should appear above */
+    .tooltip.tooltip-above::after {
+      top: auto;
+      bottom: 100%;
+      margin-top: 0;
+      margin-bottom: 8px;
     }
 
     /* Neon text effects */
@@ -666,8 +684,8 @@
           </div>
           <div class="file-actions">
             <button class="action-btn tooltip" data-tooltip="Rename">&#9998;</button>
-            <button class="action-btn tooltip" data-tooltip="Schema">&#9881;</button>
-            <button class="action-btn danger tooltip" data-tooltip="Remove">&#10005;</button>
+            <button class="action-btn tooltip tooltip-left" data-tooltip="Schema">&#9881;</button>
+            <button class="action-btn danger tooltip tooltip-left" data-tooltip="Remove">&#10005;</button>
           </div>
         </div>
 
@@ -696,8 +714,8 @@
           </div>
           <div class="file-actions">
             <button class="action-btn tooltip" data-tooltip="Rename">&#9998;</button>
-            <button class="action-btn tooltip" data-tooltip="Schema">&#9881;</button>
-            <button class="action-btn danger tooltip" data-tooltip="Remove">&#10005;</button>
+            <button class="action-btn tooltip tooltip-left" data-tooltip="Schema">&#9881;</button>
+            <button class="action-btn danger tooltip tooltip-left" data-tooltip="Remove">&#10005;</button>
           </div>
         </div>
 
@@ -728,8 +746,8 @@
           </div>
           <div class="file-actions">
             <button class="action-btn tooltip" data-tooltip="Rename">&#9998;</button>
-            <button class="action-btn tooltip" data-tooltip="Schema">&#9881;</button>
-            <button class="action-btn danger tooltip" data-tooltip="Remove">&#10005;</button>
+            <button class="action-btn tooltip tooltip-left" data-tooltip="Schema">&#9881;</button>
+            <button class="action-btn danger tooltip tooltip-left" data-tooltip="Remove">&#10005;</button>
           </div>
         </div>
 
@@ -758,8 +776,8 @@
           </div>
           <div class="file-actions">
             <button class="action-btn tooltip" data-tooltip="Rename">&#9998;</button>
-            <button class="action-btn tooltip" data-tooltip="Schema">&#9881;</button>
-            <button class="action-btn danger tooltip" data-tooltip="Remove">&#10005;</button>
+            <button class="action-btn tooltip tooltip-left" data-tooltip="Schema">&#9881;</button>
+            <button class="action-btn danger tooltip tooltip-left" data-tooltip="Remove">&#10005;</button>
           </div>
         </div>
       </div>

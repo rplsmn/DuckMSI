@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DuckMSI - Cyberpunk Full App Mock</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-dark: #0a0a0f;
+      --bg-panel: #12121a;
+      --bg-hover: #1a1a2e;
+      --bg-selected: #16213e;
+      --neon-cyan: #00f5ff;
+      --neon-magenta: #ff00ff;
+      --neon-pink: #ff2a6d;
+      --neon-green: #05ffa1;
+      --neon-yellow: #f9f871;
+      --neon-orange: #ff6b35;
+      --text-primary: #e0e0e0;
+      --text-secondary: #808090;
+      --text-muted: #505060;
+      --border-color: #2a2a3a;
+      --glow-cyan: 0 0 10px rgba(0, 245, 255, 0.5), 0 0 20px rgba(0, 245, 255, 0.3);
+      --glow-magenta: 0 0 10px rgba(255, 0, 255, 0.5), 0 0 20px rgba(255, 0, 255, 0.3);
+      --glow-green: 0 0 10px rgba(5, 255, 161, 0.5), 0 0 20px rgba(5, 255, 161, 0.3);
+    }
+
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 30px;
+      background-image:
+        linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.1) 0px,
+        rgba(0, 0, 0, 0.1) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      z-index: 1000;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* App Header */
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .app-logo {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+      border-radius: 10px;
+      font-size: 24px;
+    }
+
+    .app-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .app-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    .app-status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--neon-green);
+    }
+
+    .app-status .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--neon-green);
+      border-radius: 50%;
+      box-shadow: var(--glow-green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Panel Base */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow:
+        0 0 30px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      position: relative;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      padding: 12px 18px;
+      background: linear-gradient(180deg, rgba(0, 245, 255, 0.08) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border-color);
+      border-radius: 12px 12px 0 0;
+    }
+
+    .panel-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--neon-cyan);
+    }
+
+    .panel-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .panel-body {
+      padding: 15px 18px;
+    }
+
+    .panel-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px;
+      background: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid var(--border-color);
+      border-radius: 0 0 12px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Corner decorations */
+    .corner-deco {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-color: var(--neon-cyan);
+      border-style: solid;
+      border-width: 0;
+      pointer-events: none;
+    }
+
+    .corner-deco.top-left { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; }
+    .corner-deco.top-right { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; }
+    .corner-deco.bottom-left { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; }
+    .corner-deco.bottom-right { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .btn.accent {
+      border-color: var(--neon-magenta);
+      color: var(--neon-magenta);
+      background: rgba(255, 0, 255, 0.1);
+    }
+
+    .btn.accent:hover {
+      box-shadow: var(--glow-magenta);
+      background: rgba(255, 0, 255, 0.2);
+    }
+
+    .btn.success {
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      background: rgba(5, 255, 161, 0.1);
+    }
+
+    .btn.success:hover {
+      box-shadow: var(--glow-green);
+      background: rgba(5, 255, 161, 0.2);
+    }
+
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+    }
+
+    /* File Upload Area */
+    .upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 25px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .upload-area:hover {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 245, 255, 0.05);
+    }
+
+    .upload-area .icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+      opacity: 0.5;
+    }
+
+    .upload-area .text {
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    /* File Explorer (compact version) */
+    .file-list-compact {
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+      transition: background 0.2s ease;
+    }
+
+    .file-item:last-child {
+      border-bottom: none;
+    }
+
+    .file-item:hover {
+      background: var(--bg-hover);
+      margin: 0 -18px;
+      padding: 10px 18px;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 12px;
+      flex-shrink: 0;
+      background: var(--neon-green);
+      box-shadow: var(--glow-green);
+      animation: pulse 2s infinite;
+    }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-size: 13px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .file-name .alias {
+      color: var(--neon-magenta);
+      font-size: 10px;
+      padding: 1px 6px;
+      background: rgba(255, 0, 255, 0.15);
+      border-radius: 3px;
+      border: 1px solid rgba(255, 0, 255, 0.3);
+    }
+
+    .file-meta {
+      display: flex;
+      gap: 15px;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .file-meta .value {
+      color: var(--neon-cyan);
+    }
+
+    .file-meta .rows .value { color: var(--neon-green); }
+    .file-meta .cols .value { color: var(--neon-yellow); }
+    .file-meta .size .value { color: var(--neon-orange); }
+
+    /* SQL Editor */
+    .sql-editor {
+      width: 100%;
+      min-height: 120px;
+      padding: 15px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .sql-editor:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 0 1px rgba(0, 245, 255, 0.2);
+    }
+
+    .sql-editor::placeholder {
+      color: var(--text-muted);
+    }
+
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .query-templates {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .template-btn {
+      padding: 4px 10px;
+      font-size: 10px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .template-btn:hover {
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+    }
+
+    /* Results Table */
+    .results-container {
+      max-height: 350px;
+      overflow: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .results-table th {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+      color: var(--neon-cyan);
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 500;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 2px solid var(--neon-cyan);
+      white-space: nowrap;
+    }
+
+    .results-table td {
+      padding: 10px 15px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .results-table tbody tr:hover {
+      background: var(--bg-hover);
+    }
+
+    .results-table tbody tr:nth-child(even) {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .results-table tbody tr:nth-child(even):hover {
+      background: var(--bg-hover);
+    }
+
+    /* Data type styling */
+    .results-table td.number {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--neon-green);
+    }
+
+    .results-table td.string {
+      color: var(--neon-yellow);
+    }
+
+    .results-table td.date {
+      color: var(--neon-orange);
+    }
+
+    .results-table td.null {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Query Stats */
+    .query-stats {
+      display: flex;
+      gap: 20px;
+      font-size: 11px;
+    }
+
+    .query-stats .stat {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .query-stats .value {
+      color: var(--neon-cyan);
+    }
+
+    /* Tooltips */
+    .tooltip {
+      position: relative;
+    }
+
+    .tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 8px;
+      padding: 6px 10px;
+      background: var(--bg-dark);
+      border: 1px solid var(--neon-cyan);
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 100;
+    }
+
+    .tooltip:hover::after {
+      opacity: 1;
+    }
+
+    .tooltip.tooltip-left::after {
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+
+      .app-header {
+        flex-wrap: wrap;
+      }
+
+      .app-title {
+        font-size: 20px;
+      }
+
+      .app-status {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 10px;
+      }
+
+      .panel-body {
+        padding: 12px;
+      }
+
+      .file-meta {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .editor-toolbar {
+        flex-wrap: wrap;
+      }
+
+      .query-templates {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+
+      .results-container {
+        max-height: 250px;
+      }
+
+      .query-stats {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- App Header -->
+    <div class="app-header">
+      <div class="app-logo">&#129430;</div>
+      <div>
+        <div class="app-title">DuckMSI</div>
+        <div class="app-subtitle">Privacy-First Parquet Explorer</div>
+      </div>
+      <div class="app-status">
+        <span class="dot"></span>
+        DuckDB Ready
+      </div>
+    </div>
+
+    <!-- File Upload Panel -->
+    <div class="panel">
+      <div class="corner-deco top-left"></div>
+      <div class="corner-deco top-right"></div>
+      <div class="corner-deco bottom-left"></div>
+      <div class="corner-deco bottom-right"></div>
+
+      <div class="panel-header">
+        <span class="panel-title">Data Files</span>
+        <div class="panel-actions">
+          <button class="btn btn-icon tooltip" data-tooltip="Refresh">&#8635;</button>
+          <button class="btn btn-icon accent tooltip" data-tooltip="Add Files">+</button>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        <!-- Upload Area (shown when no files) -->
+        <!--
+        <div class="upload-area">
+          <div class="icon">&#128190;</div>
+          <div class="text">Drag & drop .parquet files here, or click to browse</div>
+          <button class="btn accent">Choose Files</button>
+        </div>
+        -->
+
+        <!-- File List (shown when files loaded) -->
+        <div class="file-list-compact">
+          <div class="file-item">
+            <div class="status-indicator"></div>
+            <div class="file-info">
+              <div class="file-name">
+                sales_2024_q1.parquet
+                <span class="alias">sales</span>
+              </div>
+              <div class="file-meta">
+                <span class="rows"><span class="value">1,247,832</span> rows</span>
+                <span class="cols"><span class="value">24</span> cols</span>
+                <span class="size"><span class="value">148 MB</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="file-item">
+            <div class="status-indicator"></div>
+            <div class="file-info">
+              <div class="file-name">
+                customers.parquet
+                <span class="alias">customers</span>
+              </div>
+              <div class="file-meta">
+                <span class="rows"><span class="value">45,231</span> rows</span>
+                <span class="cols"><span class="value">12</span> cols</span>
+                <span class="size"><span class="value">8.2 MB</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <span>2 files loaded</span>
+        <span>Memory: <span style="color: var(--neon-cyan);">156.2 MB</span></span>
+      </div>
+    </div>
+
+    <!-- SQL Editor Panel -->
+    <div class="panel">
+      <div class="corner-deco top-left"></div>
+      <div class="corner-deco top-right"></div>
+      <div class="corner-deco bottom-left"></div>
+      <div class="corner-deco bottom-right"></div>
+
+      <div class="panel-header">
+        <span class="panel-title">SQL Query</span>
+      </div>
+
+      <div class="panel-body">
+        <textarea class="sql-editor" placeholder="SELECT * FROM sales LIMIT 100">SELECT
+  c.customer_name,
+  c.region,
+  COUNT(s.order_id) as total_orders,
+  SUM(s.amount) as total_revenue
+FROM sales s
+JOIN customers c ON s.customer_id = c.id
+GROUP BY c.customer_name, c.region
+ORDER BY total_revenue DESC
+LIMIT 10</textarea>
+
+        <div class="editor-toolbar">
+          <button class="btn success">&#9654; Execute</button>
+          <button class="btn tooltip" data-tooltip="Clear editor">Clear</button>
+
+          <div class="query-templates">
+            <button class="template-btn">SELECT *</button>
+            <button class="template-btn">COUNT</button>
+            <button class="template-btn">GROUP BY</button>
+            <button class="template-btn">JOIN</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="panel">
+      <div class="corner-deco top-left"></div>
+      <div class="corner-deco top-right"></div>
+      <div class="corner-deco bottom-left"></div>
+      <div class="corner-deco bottom-right"></div>
+
+      <div class="panel-header">
+        <span class="panel-title">Query Results</span>
+        <div class="panel-actions">
+          <button class="btn tooltip tooltip-left" data-tooltip="Export CSV">&#128190; Export</button>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        <div class="results-container">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>customer_name</th>
+                <th>region</th>
+                <th>total_orders</th>
+                <th>total_revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="string">Acme Corporation</td>
+                <td class="string">North America</td>
+                <td class="number">1,247</td>
+                <td class="number">$2,847,293.50</td>
+              </tr>
+              <tr>
+                <td class="string">TechStart Inc</td>
+                <td class="string">Europe</td>
+                <td class="number">892</td>
+                <td class="number">$1,923,847.25</td>
+              </tr>
+              <tr>
+                <td class="string">Global Systems Ltd</td>
+                <td class="string">Asia Pacific</td>
+                <td class="number">756</td>
+                <td class="number">$1,547,832.00</td>
+              </tr>
+              <tr>
+                <td class="string">DataFlow Partners</td>
+                <td class="string">North America</td>
+                <td class="number">634</td>
+                <td class="number">$1,284,567.75</td>
+              </tr>
+              <tr>
+                <td class="string">CloudNine Services</td>
+                <td class="string">Europe</td>
+                <td class="number">521</td>
+                <td class="number">$987,234.50</td>
+              </tr>
+              <tr>
+                <td class="string">Innovate Labs</td>
+                <td class="string">North America</td>
+                <td class="number">487</td>
+                <td class="number">$876,543.25</td>
+              </tr>
+              <tr>
+                <td class="string">Pacific Ventures</td>
+                <td class="string">Asia Pacific</td>
+                <td class="number">423</td>
+                <td class="number">$765,432.00</td>
+              </tr>
+              <tr>
+                <td class="string">Nordic Solutions</td>
+                <td class="string">Europe</td>
+                <td class="number">398</td>
+                <td class="number">$654,321.75</td>
+              </tr>
+              <tr>
+                <td class="string">Summit Enterprises</td>
+                <td class="string">North America</td>
+                <td class="number">367</td>
+                <td class="number">$543,210.50</td>
+              </tr>
+              <tr>
+                <td class="string">Eastern Trade Co</td>
+                <td class="string">Asia Pacific</td>
+                <td class="number">345</td>
+                <td class="number">$432,109.25</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <div class="query-stats">
+          <span class="stat">Rows: <span class="value">10</span></span>
+          <span class="stat">Columns: <span class="value">4</span></span>
+          <span class="stat">Time: <span class="value">0.023s</span></span>
+        </div>
+        <span style="color: var(--neon-green);">&#10003; Query successful</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
