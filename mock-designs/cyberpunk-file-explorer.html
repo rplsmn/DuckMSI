@@ -182,6 +182,19 @@
       box-shadow: var(--glow-cyan);
     }
 
+    .panel-btn.accent {
+      border-color: var(--neon-magenta);
+      color: var(--neon-magenta);
+      background: rgba(255, 0, 255, 0.1);
+    }
+
+    .panel-btn.accent:hover {
+      border-color: var(--neon-magenta);
+      color: var(--neon-magenta);
+      box-shadow: var(--glow-magenta);
+      background: rgba(255, 0, 255, 0.2);
+    }
+
     /* File List */
     .file-list {
       padding: 10px 0;
@@ -206,30 +219,27 @@
       border-left-color: var(--neon-magenta);
     }
 
-    .file-icon {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    /* Status indicator (replaces file icon) */
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
       margin-right: 15px;
-      border-radius: 8px;
-      font-size: 14px;
       flex-shrink: 0;
-    }
-
-    .file-icon.parquet {
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      border: 1px solid var(--neon-cyan);
-      color: var(--neon-cyan);
-      box-shadow: var(--glow-cyan);
-    }
-
-    .file-icon.csv {
-      background: linear-gradient(135deg, #1a1a2e, #162e16);
-      border: 1px solid var(--neon-green);
-      color: var(--neon-green);
+      background: var(--neon-green);
       box-shadow: var(--glow-green);
+      animation: pulse 2s infinite;
+    }
+
+    .status-indicator.loading {
+      background: var(--neon-yellow);
+      box-shadow: 0 0 10px rgba(249, 248, 113, 0.5);
+    }
+
+    .status-indicator.error {
+      background: var(--neon-pink);
+      box-shadow: 0 0 10px rgba(255, 42, 109, 0.5);
+      animation: none;
     }
 
     .file-info {
@@ -325,22 +335,6 @@
     .action-btn.danger:hover {
       border-color: var(--neon-pink);
       color: var(--neon-pink);
-    }
-
-    /* Status Indicator */
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-left: auto;
-      margin-right: 15px;
-      flex-shrink: 0;
-    }
-
-    .status-dot.loaded {
-      background: var(--neon-green);
-      box-shadow: var(--glow-green);
-      animation: pulse 2s infinite;
     }
 
     @keyframes pulse {
@@ -532,6 +526,81 @@
     .file-explorer {
       position: relative;
     }
+
+    /* Mobile Responsive */
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+
+      .header {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .header-title {
+        font-size: 18px;
+      }
+
+      .header-stats {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+        gap: 15px;
+      }
+
+      .file-item {
+        padding: 12px 15px;
+        flex-wrap: wrap;
+      }
+
+      .file-info {
+        flex: 1 1 calc(100% - 40px);
+        min-width: 0;
+      }
+
+      .file-name {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .file-name .table-alias {
+        order: 2;
+      }
+
+      .file-meta {
+        flex-wrap: wrap;
+        gap: 8px 15px;
+        margin-top: 6px;
+      }
+
+      .meta-item {
+        white-space: nowrap;
+      }
+
+      .file-actions {
+        opacity: 1;
+        width: 100%;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border-color);
+        justify-content: flex-end;
+      }
+
+      .panel-footer {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+      }
+
+      .panel-header {
+        padding: 12px 15px;
+      }
+
+      .panel-title {
+        font-size: 11px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -566,7 +635,7 @@
         <div class="panel-actions">
           <button class="panel-btn tooltip" data-tooltip="Collapse All">&#9660;</button>
           <button class="panel-btn tooltip" data-tooltip="Refresh">&#8635;</button>
-          <button class="panel-btn tooltip" data-tooltip="Add Files">+</button>
+          <button class="panel-btn accent tooltip" data-tooltip="Add Files">+</button>
         </div>
       </div>
 
@@ -574,7 +643,7 @@
       <div class="file-list">
         <!-- File Item 1 -->
         <div class="file-item selected">
-          <div class="file-icon parquet">PQ</div>
+          <div class="status-indicator"></div>
           <div class="file-info">
             <div class="file-name">
               sales_2024_q1.parquet
@@ -595,7 +664,6 @@
               </span>
             </div>
           </div>
-          <div class="status-dot loaded"></div>
           <div class="file-actions">
             <button class="action-btn tooltip" data-tooltip="Rename">&#9998;</button>
             <button class="action-btn tooltip" data-tooltip="Schema">&#9881;</button>
@@ -605,7 +673,7 @@
 
         <!-- File Item 2 -->
         <div class="file-item">
-          <div class="file-icon parquet">PQ</div>
+          <div class="status-indicator"></div>
           <div class="file-info">
             <div class="file-name">
               customers_main.parquet
@@ -626,7 +694,6 @@
               </span>
             </div>
           </div>
-          <div class="status-dot loaded"></div>
           <div class="file-actions">
             <button class="action-btn tooltip" data-tooltip="Rename">&#9998;</button>
             <button class="action-btn tooltip" data-tooltip="Schema">&#9881;</button>
@@ -638,7 +705,7 @@
 
         <!-- File Item 3 -->
         <div class="file-item">
-          <div class="file-icon parquet">PQ</div>
+          <div class="status-indicator"></div>
           <div class="file-info">
             <div class="file-name">
               products_catalog.parquet
@@ -659,7 +726,6 @@
               </span>
             </div>
           </div>
-          <div class="status-dot loaded"></div>
           <div class="file-actions">
             <button class="action-btn tooltip" data-tooltip="Rename">&#9998;</button>
             <button class="action-btn tooltip" data-tooltip="Schema">&#9881;</button>
@@ -669,7 +735,7 @@
 
         <!-- File Item 4 -->
         <div class="file-item">
-          <div class="file-icon parquet">PQ</div>
+          <div class="status-indicator"></div>
           <div class="file-info">
             <div class="file-name">
               transactions_archive_2023.parquet
@@ -690,7 +756,6 @@
               </span>
             </div>
           </div>
-          <div class="status-dot loaded"></div>
           <div class="file-actions">
             <button class="action-btn tooltip" data-tooltip="Rename">&#9998;</button>
             <button class="action-btn tooltip" data-tooltip="Schema">&#9881;</button>
