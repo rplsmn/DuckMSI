@@ -375,6 +375,177 @@ body::before {
 - Pulse animations should be subtle (opacity only, not scale)
 - Provide tooltips for icon-only buttons
 
+---
+
+## Module Architecture: SQL Templates
+
+Following the modularization pattern from `plans/phase1-review-and-modularization-plan.md`, the template system should be structured as a separate module for easy maintenance.
+
+### Proposed Structure
+
+```
+src/
+├── modules/
+│   └── templates/
+│       ├── templates.js        # Template registry and lookup
+│       ├── categories.js       # Category definitions
+│       ├── data/
+│       │   ├── basics.js       # Basic SELECT templates
+│       │   ├── aggregations.js # COUNT, SUM, GROUP BY, etc.
+│       │   ├── joins.js        # JOIN templates
+│       │   ├── window.js       # Window function templates
+│       │   └── duckdb.js       # DuckDB-specific features
+│       └── ui/
+│           └── command-palette.js  # Palette UI component
+```
+
+### Template Data Format
+
+Each template file exports an array of template objects:
+
+```javascript
+// src/modules/templates/data/basics.js
+export const basicTemplates = [
+  {
+    id: 'select-all',
+    title: 'SELECT * FROM table',
+    description: 'Select all columns from a table',
+    icon: '*',
+    sql: `SELECT * FROM {table} LIMIT 100`,
+    placeholders: ['table']
+  },
+  {
+    id: 'select-where',
+    title: 'SELECT with WHERE',
+    description: 'Filter rows with conditions',
+    icon: '?',
+    sql: `SELECT *
+FROM {table}
+WHERE {column} = {value}
+LIMIT 100`,
+    placeholders: ['table', 'column', 'value']
+  }
+];
+```
+
+### Category Registry
+
+```javascript
+// src/modules/templates/categories.js
+export const CATEGORIES = [
+  { id: 'basics', label: 'Basics', icon: '📋' },
+  { id: 'aggregations', label: 'Aggregations', icon: 'Σ' },
+  { id: 'joins', label: 'Joins', icon: '⋈' },
+  { id: 'window', label: 'Window Functions', icon: '📊' },
+  { id: 'duckdb', label: 'DuckDB Features', icon: '🦆' }
+];
+```
+
+### Template Registry
+
+```javascript
+// src/modules/templates/templates.js
+import { basicTemplates } from './data/basics.js';
+import { aggregationTemplates } from './data/aggregations.js';
+import { joinTemplates } from './data/joins.js';
+import { windowTemplates } from './data/window.js';
+import { duckdbTemplates } from './data/duckdb.js';
+import { CATEGORIES } from './categories.js';
+
+// Combine all templates with category assignment
+const ALL_TEMPLATES = [
+  ...basicTemplates.map(t => ({ ...t, category: 'basics' })),
+  ...aggregationTemplates.map(t => ({ ...t, category: 'aggregations' })),
+  ...joinTemplates.map(t => ({ ...t, category: 'joins' })),
+  ...windowTemplates.map(t => ({ ...t, category: 'window' })),
+  ...duckdbTemplates.map(t => ({ ...t, category: 'duckdb' }))
+];
+
+export function getAllTemplates() {
+  return ALL_TEMPLATES;
+}
+
+export function getTemplatesByCategory(categoryId) {
+  return ALL_TEMPLATES.filter(t => t.category === categoryId);
+}
+
+export function searchTemplates(query) {
+  const lower = query.toLowerCase();
+  return ALL_TEMPLATES.filter(t =>
+    t.title.toLowerCase().includes(lower) ||
+    t.description.toLowerCase().includes(lower)
+  );
+}
+
+export function getTemplateById(id) {
+  return ALL_TEMPLATES.find(t => t.id === id);
+}
+
+export { CATEGORIES };
+```
+
+### Event Integration
+
+Using the event bus pattern from the modularization plan:
+
+```javascript
+// In command-palette.js
+import { events, EVENTS } from '../shared/events.js';
+
+// When user selects a template
+events.emit(EVENTS.TEMPLATE_SELECTED, {
+  templateId: 'select-all',
+  sql: 'SELECT * FROM sales LIMIT 100'
+});
+
+// In sql-editor.js - listen for template insertion
+events.on(EVENTS.TEMPLATE_SELECTED, ({ sql }) => {
+  this.insertAtCursor(sql);
+});
+```
+
+### Adding New Templates
+
+To add a new template:
+
+1. **Find or create the category file** in `src/modules/templates/data/`
+2. **Add the template object** with required fields:
+   - `id`: Unique kebab-case identifier
+   - `title`: Short display name
+   - `description`: One-line explanation
+   - `icon`: Single character or emoji
+   - `sql`: SQL template with `{placeholder}` syntax
+   - `placeholders`: Array of placeholder names (optional)
+
+3. **If creating a new category**:
+   - Add to `CATEGORIES` array in `categories.js`
+   - Create new data file and import in `templates.js`
+
+### Adding New Categories
+
+```javascript
+// 1. Add to categories.js
+export const CATEGORIES = [
+  // ... existing
+  { id: 'analytics', label: 'Analytics', icon: '📈' }
+];
+
+// 2. Create data/analytics.js
+export const analyticsTemplates = [
+  { id: 'cohort-analysis', title: 'Cohort Analysis', ... }
+];
+
+// 3. Import in templates.js
+import { analyticsTemplates } from './data/analytics.js';
+
+const ALL_TEMPLATES = [
+  // ... existing
+  ...analyticsTemplates.map(t => ({ ...t, category: 'analytics' }))
+];
+```
+
 ## Reference
 
 See `mock-designs/cyberpunk-file-explorer.html` for a complete implementation example.
+See `mock-designs/cyberpunk-full-app.html` for the full app layout with command palette.
+See `mock-designs/template-ui-options.md` for analysis of alternative template UI approaches.
