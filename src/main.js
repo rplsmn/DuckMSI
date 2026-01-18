@@ -1,163 +1,59 @@
-import { getApp, formatQueryResults, createResultsTable, handleFileUpload } from './app.js';
+import { getApp, formatQueryResults, handleFileUpload } from './app.js';
+import { DOM_IDS, MESSAGES, CONFIG } from './modules/shared/index.js';
+import { exportToCSV } from './modules/files/index.js';
+import {
+  StatusIndicator,
+  ResultsTableUI,
+  FileListUI,
+  DiagnosticsUI,
+  SQLEditor
+} from './modules/ui/index.js';
 
 // DOM Elements
-const statusEl = document.getElementById('status');
-const dropZone = document.getElementById('drop-zone');
-const uploadBtn = document.getElementById('upload-btn');
-const fileInput = document.getElementById('file-input');
-const fileListBody = document.getElementById('file-list-body');
-const clearAllBtn = document.getElementById('clear-all-btn');
-const diagnosticsDashboard = document.getElementById('diagnostics-dashboard');
-const diagnosticsBody = document.getElementById('diagnostics-body');
-const sqlInput = document.getElementById('sql-input');
-const executeBtn = document.getElementById('execute-btn');
-const resultsBox = document.getElementById('results-box');
+const statusEl = document.getElementById(DOM_IDS.STATUS);
+const dropZone = document.getElementById(DOM_IDS.DROP_ZONE);
+const uploadBtn = document.getElementById(DOM_IDS.UPLOAD_BTN);
+const fileInput = document.getElementById(DOM_IDS.FILE_INPUT);
+const fileListBody = document.getElementById(DOM_IDS.FILE_LIST_BODY);
+const clearAllBtn = document.getElementById(DOM_IDS.CLEAR_ALL_BTN);
+const diagnosticsDashboard = document.getElementById(DOM_IDS.DIAGNOSTICS_DASHBOARD);
+const diagnosticsBody = document.getElementById(DOM_IDS.DIAGNOSTICS_BODY);
+const sqlInput = document.getElementById(DOM_IDS.SQL_INPUT);
+const executeBtn = document.getElementById(DOM_IDS.EXECUTE_BTN);
+const resultsBox = document.getElementById(DOM_IDS.RESULTS_BOX);
+const exportBtn = document.getElementById(DOM_IDS.EXPORT_BTN);
+const sqlSection = document.getElementById(DOM_IDS.SQL_SECTION);
+const resultsSection = document.getElementById(DOM_IDS.RESULTS_SECTION);
 
+// App instance
 let app = null;
 
-/**
- * Update status display
- */
-function setStatus(message, type = 'loading') {
-  statusEl.textContent = message;
-  statusEl.className = type;
-}
+// UI Components
+const status = new StatusIndicator(statusEl);
+const resultsUI = new ResultsTableUI(resultsBox, exportBtn);
+const fileListUI = new FileListUI(fileListBody, clearAllBtn);
+const diagnosticsUI = new DiagnosticsUI(diagnosticsDashboard, diagnosticsBody);
+const sqlEditor = new SQLEditor(sqlInput, executeBtn);
 
 /**
- * Display results in the results box
+ * Update all UI components after file changes
  */
-let lastQueryResults = null;
-function displayResults(data) {
-  resultsBox.innerHTML = '';
-  lastQueryResults = data;
-  if (data.rows.length === 0) {
-    resultsBox.innerHTML = '<p class="message">Query returned no results.</p>';
-    document.getElementById('export-btn').style.display = 'none';
-    document.getElementById('export-btn').disabled = true;
-    return;
-  }
-  const table = createResultsTable(data);
-  resultsBox.appendChild(table);
-  document.getElementById('export-btn').style.display = '';
-  document.getElementById('export-btn').disabled = false;
-}
-
-/**
- * Display error in results box
- */
-function displayError(error) {
-  resultsBox.innerHTML = `<div class="error">Error: ${error.message}</div>`;
-}
-
-/**
- * Display success message
- */
-function displaySuccess(message) {
-  resultsBox.innerHTML = `<div class="success">${message}</div>`;
-}
-
-/**
- * Update file list display
- */
-function updateFileListDisplay() {
+function updateUI() {
   const files = app.getAllTablesMetadata();
 
   // Show/hide SQL and results sections based on file upload
-  const sqlSection = document.getElementById('sql-section');
-  const resultsSection = document.getElementById('results-section');
   if (files.length === 0) {
-    fileListBody.innerHTML = '<tr><td colspan="5" class="empty-message">No files loaded</td></tr>';
-    clearAllBtn.classList.remove('visible');
-    diagnosticsDashboard.classList.remove('visible');
     if (sqlSection) sqlSection.style.display = 'none';
     if (resultsSection) resultsSection.style.display = 'none';
-    return;
   } else {
     if (sqlSection) sqlSection.style.display = '';
     if (resultsSection) resultsSection.style.display = '';
   }
 
-  fileListBody.innerHTML = files.map(file => {
-    // Defensive checks for undefined values
-    const rowCount = file.rowCount || 0;
-    const columnCount = file.columnCount || 0;
-
-    return `
-      <tr>
-        <td class="table-name">${file.tableName}</td>
-        <td>${file.originalName}</td>
-        <td>${rowCount.toLocaleString()}</td>
-        <td>${columnCount}</td>
-        <td>
-          <button class="btn-small btn-rename" data-table="${file.tableName}">Rename</button>
-          <button class="btn-small btn-danger" data-table="${file.tableName}">Remove</button>
-        </td>
-      </tr>
-    `;
-  }).join('');
-
-  clearAllBtn.classList.add('visible');
-
-  // Attach event handlers
-  document.querySelectorAll('.btn-rename').forEach(btn => {
-    btn.addEventListener('click', () => handleRename(btn.dataset.table));
-  });
-
-  document.querySelectorAll('.btn-danger').forEach(btn => {
-    btn.addEventListener('click', () => removeFile(btn.dataset.table));
-  });
-
-  // Update example query
-  updateExampleQuery();
-
-  // Update diagnostics table with all files
-  displayAllFileStatistics();
-}
-
-/**
- * Display statistics for all loaded files in diagnostics table
- */
-function displayAllFileStatistics() {
-  const files = app.getAllTablesMetadata();
-
-  console.log('displayAllFileStatistics called, files:', files.length);
-
-  if (files.length === 0) {
-    diagnosticsBody.innerHTML = '<tr><td colspan="5" class="empty-message">Upload files to see statistics</td></tr>';
-    diagnosticsDashboard.classList.remove('visible');
-    return;
-  }
-
-  console.log('Showing diagnostics for', files.length, 'files');
-
-  diagnosticsBody.innerHTML = files.map(file => {
-    // Defensive checks for undefined values
-    const rowCount = file.rowCount || 0;
-    const columnCount = file.columnCount || 0;
-    // If uniqueRowCount is undefined, assume no duplicates (uniqueRowCount = rowCount)
-    const uniqueRowCount = file.uniqueRowCount !== undefined ? file.uniqueRowCount : rowCount;
-
-    const duplicatePercent = rowCount > 0
-      ? ((rowCount - uniqueRowCount) / rowCount * 100).toFixed(1)
-      : 0;
-
-    // Color code duplicate percentage
-    let duplicateClass = 'duplicate-low';
-    if (duplicatePercent > 20) duplicateClass = 'duplicate-high';
-    else if (duplicatePercent > 5) duplicateClass = 'duplicate-medium';
-
-    return `
-      <tr>
-        <td class="table-name-col">${file.tableName}</td>
-        <td class="number-col">${rowCount.toLocaleString()}</td>
-        <td class="number-col">${columnCount}</td>
-        <td class="number-col">${uniqueRowCount.toLocaleString()}</td>
-        <td class="number-col ${duplicateClass}">${duplicatePercent}%</td>
-      </tr>
-    `;
-  }).join('');
-
-  diagnosticsDashboard.classList.add('visible');
+  // Update UI components
+  fileListUI.render(files);
+  diagnosticsUI.render(files);
+  sqlEditor.updateExampleQuery(files);
 }
 
 /**
@@ -171,14 +67,7 @@ async function processFiles(files) {
   for (const file of fileArray) {
     try {
       const { name, buffer } = await handleFileUpload(file);
-      console.log('Loading file:', name);
-      const tableName = await app.loadParquetFile(name, buffer);
-      console.log('Loaded as table:', tableName);
-
-      // Verify metadata was stored
-      const metadata = app.getTableMetadata(tableName);
-      console.log('Metadata for', tableName, ':', metadata);
-
+      await app.loadParquetFile(name, buffer);
       successCount++;
     } catch (error) {
       errorCount++;
@@ -187,14 +76,15 @@ async function processFiles(files) {
   }
 
   // Update UI after all files processed
-  updateFileListDisplay();
+  updateUI();
 
   if (successCount > 0) {
     const tables = app.getAllTablesMetadata();
     const tableNames = tables.slice(-successCount).map(t => t.tableName).join(', ');
-    displaySuccess(`Successfully loaded ${successCount} file${successCount > 1 ? 's' : ''}: ${tableNames}${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
+    const message = `Successfully loaded ${successCount} file${successCount > 1 ? 's' : ''}: ${tableNames}${errorCount > 0 ? ` (${errorCount} failed)` : ''}`;
+    resultsUI.showSuccess(message);
   } else {
-    displayError(new Error('Failed to load any files'));
+    resultsUI.showError('Failed to load any files');
   }
 }
 
@@ -207,10 +97,10 @@ async function handleRename(tableName) {
 
   try {
     const sanitizedName = await app.renameTable(tableName, newName);
-    displaySuccess(`Renamed "${tableName}" to "${sanitizedName}"`);
-    updateFileListDisplay();
+    resultsUI.showSuccess(`Renamed "${tableName}" to "${sanitizedName}"`);
+    updateUI();
   } catch (error) {
-    displayError(error);
+    resultsUI.showError(error.message);
   }
 }
 
@@ -222,10 +112,10 @@ async function removeFile(tableName) {
 
   try {
     await app.removeTable(tableName);
-    displaySuccess(`Removed table "${tableName}"`);
-    updateFileListDisplay();
+    resultsUI.showSuccess(`Removed table "${tableName}"`);
+    updateUI();
   } catch (error) {
-    displayError(error);
+    resultsUI.showError(error.message);
   }
 }
 
@@ -237,30 +127,11 @@ async function clearAllFiles() {
 
   try {
     await app.clearAllTables();
-    displaySuccess('All files cleared');
-    updateFileListDisplay();
-    resultsBox.innerHTML = '<p class="message">Results will appear here after executing a query.</p>';
+    resultsUI.showSuccess('All files cleared');
+    updateUI();
+    resultsUI.showPlaceholder();
   } catch (error) {
-    displayError(error);
-  }
-}
-
-/**
- * Update example query based on loaded files
- */
-function updateExampleQuery() {
-  const files = app.getAllTablesMetadata();
-
-  if (files.length === 0) {
-    sqlInput.placeholder = "SELECT * FROM 'your_file.parquet' LIMIT 10";
-    return;
-  }
-
-  if (files.length === 1) {
-    sqlInput.value = `SELECT * FROM ${files[0].tableName} LIMIT 10`;
-  } else {
-    // Show example with available tables listed
-    sqlInput.value = `-- Available tables: ${files.map(f => f.tableName).join(', ')}\nSELECT * FROM ${files[0].tableName} LIMIT 10`;
+    resultsUI.showError(error.message);
   }
 }
 
@@ -268,24 +139,40 @@ function updateExampleQuery() {
  * Execute SQL query
  */
 async function executeQuery() {
-  const sql = sqlInput.value.trim();
+  const sql = sqlEditor.getValue();
   if (!sql) {
-    displayError(new Error('Please enter a SQL query'));
+    resultsUI.showError('Please enter a SQL query');
     return;
   }
 
-  executeBtn.disabled = true;
-  executeBtn.textContent = 'Executing...';
+  sqlEditor.setExecuting();
 
   try {
     const results = await app.executeQuery(sql);
-    const formatted = formatQueryResults(results, 50);
-    displayResults(formatted);
+    const formatted = formatQueryResults(results, CONFIG.MAX_RESULT_ROWS);
+    resultsUI.render(formatted);
   } catch (error) {
-    displayError(error);
+    resultsUI.showError(error.message);
   } finally {
-    executeBtn.disabled = false;
-    executeBtn.textContent = 'Execute Query';
+    sqlEditor.enableExecute();
+  }
+}
+
+/**
+ * Handle export button click
+ */
+function handleExport() {
+  const results = resultsUI.getLastResults();
+  if (!results || !results.columns || results.rows.length === 0) return;
+
+  let defaultName = CONFIG.DEFAULT_EXPORT_FILENAME;
+  let filename = prompt('Export results as CSV. Enter filename:', defaultName);
+  if (!filename) filename = defaultName;
+
+  try {
+    exportToCSV(results, filename);
+  } catch (error) {
+    resultsUI.showError(error.message);
   }
 }
 
@@ -294,12 +181,18 @@ async function executeQuery() {
  */
 async function init() {
   try {
-    setStatus('Initializing...', 'loading');
+    status.setLoading(MESSAGES.INITIALIZING);
     app = await getApp();
-    setStatus('DuckDB Ready', 'ready');
-    executeBtn.disabled = false;
+    status.setReady(MESSAGES.READY);
+    sqlEditor.enableExecute();
+
+    // Set up UI component callbacks
+    fileListUI.onRename(handleRename);
+    fileListUI.onRemove(removeFile);
+    sqlEditor.onExecute(executeQuery);
+
   } catch (error) {
-    setStatus(`Failed: ${error.message}`, 'loading');
+    status.setLoading(`Failed: ${error.message}`);
     console.error('Failed to initialize DuckDB:', error);
   }
 }
@@ -344,37 +237,8 @@ clearAllBtn.addEventListener('click', clearAllFiles);
 // Execute button click
 executeBtn.addEventListener('click', executeQuery);
 
-// Export Results button click
-const exportBtn = document.getElementById('export-btn');
-exportBtn.addEventListener('click', () => {
-  if (!lastQueryResults || !lastQueryResults.columns || lastQueryResults.rows.length === 0) return;
-  let defaultName = 'DuckPMSI-results';
-  let filename = prompt('Export results as CSV. Enter filename:', defaultName);
-  if (!filename) filename = defaultName;
-  if (!filename.endsWith('.csv')) filename += '.csv';
-  // Convert results to CSV
-  const cols = lastQueryResults.columns;
-  const rows = lastQueryResults.rows;
-  const csv = [cols.join(',')].concat(rows.map(r => r.map(cell => {
-    if (cell === null || cell === undefined) return '';
-    const str = String(cell);
-    return str.includes(',') || str.includes('"') || str.includes('\n') ? '"' + str.replace(/"/g, '""') + '"' : str;
-  }).join(','))).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
-});
-
-// Execute on Ctrl+Enter
-sqlInput.addEventListener('keydown', (e) => {
-  if (e.ctrlKey && e.key === 'Enter') {
-    executeQuery();
-  }
-});
+// Export button click
+exportBtn.addEventListener('click', handleExport);
 
 // Initialize app
 init();
