@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DuckMSI - Cyberpunk Full App Mock</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-dark: #0a0a0f;
+      --bg-panel: #12121a;
+      --bg-hover: #1a1a2e;
+      --bg-selected: #16213e;
+      --neon-cyan: #00f5ff;
+      --neon-magenta: #ff00ff;
+      --neon-pink: #ff2a6d;
+      --neon-green: #05ffa1;
+      --neon-yellow: #f9f871;
+      --neon-orange: #ff6b35;
+      --text-primary: #e0e0e0;
+      --text-secondary: #808090;
+      --text-muted: #505060;
+      --border-color: #2a2a3a;
+      --glow-cyan: 0 0 10px rgba(0, 245, 255, 0.5), 0 0 20px rgba(0, 245, 255, 0.3);
+      --glow-magenta: 0 0 10px rgba(255, 0, 255, 0.5), 0 0 20px rgba(255, 0, 255, 0.3);
+      --glow-green: 0 0 10px rgba(5, 255, 161, 0.5), 0 0 20px rgba(5, 255, 161, 0.3);
+    }
+
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 30px;
+      background-image:
+        linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.1) 0px,
+        rgba(0, 0, 0, 0.1) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      z-index: 1000;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* App Header */
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .app-logo {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+      border-radius: 10px;
+      font-size: 24px;
+    }
+
+    .app-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .app-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    .app-status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--neon-green);
+    }
+
+    .app-status .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--neon-green);
+      border-radius: 50%;
+      box-shadow: var(--glow-green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Panel Base */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow:
+        0 0 30px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      position: relative;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      padding: 12px 18px;
+      background: linear-gradient(180deg, rgba(0, 245, 255, 0.08) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border-color);
+      border-radius: 12px 12px 0 0;
+    }
+
+    .panel-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--neon-cyan);
+    }
+
+    .panel-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .panel-body {
+      padding: 15px 18px;
+    }
+
+    .panel-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px;
+      background: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid var(--border-color);
+      border-radius: 0 0 12px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Corner decorations */
+    .corner-deco {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-color: var(--neon-cyan);
+      border-style: solid;
+      border-width: 0;
+      pointer-events: none;
+    }
+
+    .corner-deco.top-left { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; }
+    .corner-deco.top-right { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; }
+    .corner-deco.bottom-left { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; }
+    .corner-deco.bottom-right { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .btn.accent {
+      border-color: var(--neon-magenta);
+      color: var(--neon-magenta);
+      background: rgba(255, 0, 255, 0.1);
+    }
+
+    .btn.accent:hover {
+      box-shadow: var(--glow-magenta);
+      background: rgba(255, 0, 255, 0.2);
+    }
+
+    .btn.success {
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      background: rgba(5, 255, 161, 0.1);
+    }
+
+    .btn.success:hover {
+      box-shadow: var(--glow-green);
+      background: rgba(5, 255, 161, 0.2);
+    }
+
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+    }
+
+    /* File Upload Area */
+    .upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 25px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .upload-area:hover {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 245, 255, 0.05);
+    }
+
+    .upload-area .icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+      opacity: 0.5;
+    }
+
+    .upload-area .text {
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    /* File Explorer (compact version) */
+    .file-list-compact {
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+      transition: background 0.2s ease;
+    }
+
+    .file-item:last-child {
+      border-bottom: none;
+    }
+
+    .file-item:hover {
+      background: var(--bg-hover);
+      margin: 0 -18px;
+      padding: 10px 18px;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 12px;
+      flex-shrink: 0;
+      background: var(--neon-green);
+      box-shadow: var(--glow-green);
+      animation: pulse 2s infinite;
+    }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-size: 13px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .file-name .alias {
+      color: var(--neon-magenta);
+      font-size: 10px;
+      padding: 1px 6px;
+      background: rgba(255, 0, 255, 0.15);
+      border-radius: 3px;
+      border: 1px solid rgba(255, 0, 255, 0.3);
+    }
+
+    .file-meta {
+      display: flex;
+      gap: 15px;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .file-meta .value {
+      color: var(--neon-cyan);
+    }
+
+    .file-meta .rows .value { color: var(--neon-green); }
+    .file-meta .cols .value { color: var(--neon-yellow); }
+    .file-meta .size .value { color: var(--neon-orange); }
+
+    /* SQL Editor */
+    .sql-editor {
+      width: 100%;
+      min-height: 120px;
+      padding: 15px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .sql-editor:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 0 1px rgba(0, 245, 255, 0.2);
+    }
+
+    .sql-editor::placeholder {
+      color: var(--text-muted);
+    }
+
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .query-templates {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .template-btn {
+      padding: 4px 10px;
+      font-size: 10px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .template-btn:hover {
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+    }
+
+    /* Results Table */
+    .results-container {
+      max-height: 350px;
+      overflow: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .results-table th {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+      color: var(--neon-cyan);
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 500;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 2px solid var(--neon-cyan);
+      white-space: nowrap;
+    }
+
+    .results-table td {
+      padding: 10px 15px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .results-table tbody tr:hover {
+      background: var(--bg-hover);
+    }
+
+    .results-table tbody tr:nth-child(even) {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .results-table tbody tr:nth-child(even):hover {
+      background: var(--bg-hover);
+    }
+
+    /* Data type styling */
+    .results-table td.number {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: var(--neon-green);
+    }
+
+    .results-table td.string {
+      color: var(--neon-yellow);
+    }
+
+    .results-table td.date {
+      color: var(--neon-orange);
+    }
+
+    .results-table td.null {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Query Stats */
+    .query-stats {
+      display: flex;
+      gap: 20px;
+      font-size: 11px;
+    }
+
+    .query-stats .stat {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .query-stats .value {
+      color: var(--neon-cyan);
+    }
+
+    /* Tooltips */
+    .tooltip {
+      position: relative;
+    }
+
+    .tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 8px;
+      padding: 6px 10px;
+      background: var(--bg-dark);
+      border: 1px solid var(--neon-cyan);
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 100;
+    }
+
+    .tooltip:hover::after {
+      opacity: 1;
+    }
+
+    .tooltip.tooltip-left::after {
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+
+    /* Command Palette */
+    .command-palette-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 15vh;
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .command-palette-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .command-palette {
+      width: 100%;
+      max-width: 550px;
+      background: var(--bg-panel);
+      border: 1px solid var(--neon-cyan);
+      border-radius: 12px;
+      box-shadow:
+        0 0 40px rgba(0, 245, 255, 0.3),
+        0 25px 50px rgba(0, 0, 0, 0.5);
+      transform: translateY(-20px) scale(0.95);
+      transition: transform 0.2s ease;
+      overflow: hidden;
+    }
+
+    .command-palette-overlay.open .command-palette {
+      transform: translateY(0) scale(1);
+    }
+
+    .palette-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .palette-search-wrapper {
+      position: relative;
+    }
+
+    .palette-search {
+      width: 100%;
+      padding: 12px 16px 12px 40px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .palette-search:focus {
+      border-color: var(--neon-cyan);
+    }
+
+    .palette-search::placeholder {
+      color: var(--text-muted);
+    }
+
+    .palette-search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .palette-hint {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .palette-hint kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      padding: 2px 6px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .palette-results {
+      max-height: 350px;
+      overflow-y: auto;
+    }
+
+    .palette-category {
+      padding: 8px 16px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+    }
+
+    .palette-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .palette-item:hover,
+    .palette-item.selected {
+      background: var(--bg-hover);
+    }
+
+    .palette-item.selected {
+      border-left: 3px solid var(--neon-magenta);
+      padding-left: 13px;
+    }
+
+    .palette-item-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--neon-cyan);
+    }
+
+    .palette-item-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .palette-item-title {
+      font-size: 13px;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .palette-item-title mark {
+      background: transparent;
+      color: var(--neon-magenta);
+      font-weight: 600;
+    }
+
+    .palette-item-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .palette-item-shortcut {
+      display: flex;
+      gap: 4px;
+      margin-left: 10px;
+    }
+
+    .palette-item-shortcut kbd {
+      padding: 3px 6px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .palette-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid var(--border-color);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .palette-footer-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .palette-footer-action {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .palette-empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .palette-empty-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+      opacity: 0.3;
+    }
+
+    /* Template trigger button */
+    .template-trigger {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-left: auto;
+    }
+
+    .template-trigger:hover {
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+    }
+
+    .template-trigger kbd {
+      padding: 2px 5px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 3px;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+
+      .app-header {
+        flex-wrap: wrap;
+      }
+
+      .app-title {
+        font-size: 20px;
+      }
+
+      .app-status {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 10px;
+      }
+
+      .panel-body {
+        padding: 12px;
+      }
+
+      .file-meta {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .editor-toolbar {
+        flex-wrap: wrap;
+      }
+
+      .query-templates {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+
+      .results-container {
+        max-height: 250px;
+      }
+
+      .query-stats {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .command-palette-overlay {
+        padding: 10px;
+        padding-top: 10vh;
+      }
+
+      .command-palette {
+        max-width: 100%;
+      }
+
+      .palette-results {
+        max-height: 45vh;
+      }
+
+      .palette-hint {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .palette-footer {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- App Header -->
+    <div class="app-header">
+      <div class="app-logo">&#129430;</div>
+      <div>
+        <div class="app-title">DuckMSI</div>
+        <div class="app-subtitle">Privacy-First Parquet Explorer</div>
+      </div>
+      <div class="app-status">
+        <span class="dot"></span>
+        DuckDB Ready
+      </div>
+    </div>
+
+    <!-- File Upload Panel -->
+    <div class="panel">
+      <div class="corner-deco top-left"></div>
+      <div class="corner-deco top-right"></div>
+      <div class="corner-deco bottom-left"></div>
+      <div class="corner-deco bottom-right"></div>
+
+      <div class="panel-header">
+        <span class="panel-title">Data Files</span>
+        <div class="panel-actions">
+          <button class="btn btn-icon tooltip" data-tooltip="Refresh">&#8635;</button>
+          <button class="btn btn-icon accent tooltip" data-tooltip="Add Files">+</button>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        <!-- Upload Area (shown when no files) -->
+        <!--
+        <div class="upload-area">
+          <div class="icon">&#128190;</div>
+          <div class="text">Drag & drop .parquet files here, or click to browse</div>
+          <button class="btn accent">Choose Files</button>
+        </div>
+        -->
+
+        <!-- File List (shown when files loaded) -->
+        <div class="file-list-compact">
+          <div class="file-item">
+            <div class="status-indicator"></div>
+            <div class="file-info">
+              <div class="file-name">
+                sales_2024_q1.parquet
+                <span class="alias">sales</span>
+              </div>
+              <div class="file-meta">
+                <span class="rows"><span class="value">1,247,832</span> rows</span>
+                <span class="cols"><span class="value">24</span> cols</span>
+                <span class="size"><span class="value">148 MB</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="file-item">
+            <div class="status-indicator"></div>
+            <div class="file-info">
+              <div class="file-name">
+                customers.parquet
+                <span class="alias">customers</span>
+              </div>
+              <div class="file-meta">
+                <span class="rows"><span class="value">45,231</span> rows</span>
+                <span class="cols"><span class="value">12</span> cols</span>
+                <span class="size"><span class="value">8.2 MB</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <span>2 files loaded</span>
+        <span>Memory: <span style="color: var(--neon-cyan);">156.2 MB</span></span>
+      </div>
+    </div>
+
+    <!-- SQL Editor Panel -->
+    <div class="panel">
+      <div class="corner-deco top-left"></div>
+      <div class="corner-deco top-right"></div>
+      <div class="corner-deco bottom-left"></div>
+      <div class="corner-deco bottom-right"></div>
+
+      <div class="panel-header">
+        <span class="panel-title">SQL Query</span>
+      </div>
+
+      <div class="panel-body">
+        <textarea class="sql-editor" placeholder="SELECT * FROM sales LIMIT 100">SELECT
+  c.customer_name,
+  c.region,
+  COUNT(s.order_id) as total_orders,
+  SUM(s.amount) as total_revenue
+FROM sales s
+JOIN customers c ON s.customer_id = c.id
+GROUP BY c.customer_name, c.region
+ORDER BY total_revenue DESC
+LIMIT 10</textarea>
+
+        <div class="editor-toolbar">
+          <button class="btn success">&#9654; Execute</button>
+          <button class="btn tooltip" data-tooltip="Clear editor">Clear</button>
+
+          <button class="template-trigger" onclick="openPalette()">
+            &#128218; Templates
+            <kbd>&#8984;K</kbd>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="panel">
+      <div class="corner-deco top-left"></div>
+      <div class="corner-deco top-right"></div>
+      <div class="corner-deco bottom-left"></div>
+      <div class="corner-deco bottom-right"></div>
+
+      <div class="panel-header">
+        <span class="panel-title">Query Results</span>
+        <div class="panel-actions">
+          <button class="btn tooltip tooltip-left" data-tooltip="Export CSV">&#128190; Export</button>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        <div class="results-container">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>customer_name</th>
+                <th>region</th>
+                <th>total_orders</th>
+                <th>total_revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="string">Acme Corporation</td>
+                <td class="string">North America</td>
+                <td class="number">1,247</td>
+                <td class="number">$2,847,293.50</td>
+              </tr>
+              <tr>
+                <td class="string">TechStart Inc</td>
+                <td class="string">Europe</td>
+                <td class="number">892</td>
+                <td class="number">$1,923,847.25</td>
+              </tr>
+              <tr>
+                <td class="string">Global Systems Ltd</td>
+                <td class="string">Asia Pacific</td>
+                <td class="number">756</td>
+                <td class="number">$1,547,832.00</td>
+              </tr>
+              <tr>
+                <td class="string">DataFlow Partners</td>
+                <td class="string">North America</td>
+                <td class="number">634</td>
+                <td class="number">$1,284,567.75</td>
+              </tr>
+              <tr>
+                <td class="string">CloudNine Services</td>
+                <td class="string">Europe</td>
+                <td class="number">521</td>
+                <td class="number">$987,234.50</td>
+              </tr>
+              <tr>
+                <td class="string">Innovate Labs</td>
+                <td class="string">North America</td>
+                <td class="number">487</td>
+                <td class="number">$876,543.25</td>
+              </tr>
+              <tr>
+                <td class="string">Pacific Ventures</td>
+                <td class="string">Asia Pacific</td>
+                <td class="number">423</td>
+                <td class="number">$765,432.00</td>
+              </tr>
+              <tr>
+                <td class="string">Nordic Solutions</td>
+                <td class="string">Europe</td>
+                <td class="number">398</td>
+                <td class="number">$654,321.75</td>
+              </tr>
+              <tr>
+                <td class="string">Summit Enterprises</td>
+                <td class="string">North America</td>
+                <td class="number">367</td>
+                <td class="number">$543,210.50</td>
+              </tr>
+              <tr>
+                <td class="string">Eastern Trade Co</td>
+                <td class="string">Asia Pacific</td>
+                <td class="number">345</td>
+                <td class="number">$432,109.25</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <div class="query-stats">
+          <span class="stat">Rows: <span class="value">10</span></span>
+          <span class="stat">Columns: <span class="value">4</span></span>
+          <span class="stat">Time: <span class="value">0.023s</span></span>
+        </div>
+        <span style="color: var(--neon-green);">&#10003; Query successful</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Palette -->
+  <div class="command-palette-overlay" id="palette-overlay" onclick="closePalette(event)">
+    <div class="command-palette" onclick="event.stopPropagation()">
+      <div class="palette-header">
+        <div class="palette-search-wrapper">
+          <span class="palette-search-icon">&#128269;</span>
+          <input type="text" class="palette-search" id="palette-search" placeholder="Search templates..." oninput="filterTemplates(this.value)">
+        </div>
+        <div class="palette-hint">
+          <span><kbd>&#8593;</kbd><kbd>&#8595;</kbd> Navigate</span>
+          <span><kbd>&#9166;</kbd> Insert</span>
+          <span><kbd>Esc</kbd> Close</span>
+        </div>
+      </div>
+
+      <div class="palette-results" id="palette-results">
+        <!-- Basics -->
+        <div class="palette-category">Basics</div>
+        <div class="palette-item selected" data-template="select-all">
+          <div class="palette-item-icon">*</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">SELECT * FROM table</div>
+            <div class="palette-item-desc">Select all columns from a table</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="select-columns">
+          <div class="palette-item-icon">&#9638;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">SELECT columns FROM table</div>
+            <div class="palette-item-desc">Select specific columns</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="select-where">
+          <div class="palette-item-icon">?</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">SELECT with WHERE</div>
+            <div class="palette-item-desc">Filter rows with conditions</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="select-limit">
+          <div class="palette-item-icon">#</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">SELECT with LIMIT</div>
+            <div class="palette-item-desc">Limit number of returned rows</div>
+          </div>
+        </div>
+
+        <!-- Aggregations -->
+        <div class="palette-category">Aggregations</div>
+        <div class="palette-item" data-template="count">
+          <div class="palette-item-icon">&#931;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">COUNT rows</div>
+            <div class="palette-item-desc">Count total or distinct values</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="sum">
+          <div class="palette-item-icon">+</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">SUM values</div>
+            <div class="palette-item-desc">Sum numeric column values</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="avg">
+          <div class="palette-item-icon">&#248;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">AVG / Average</div>
+            <div class="palette-item-desc">Calculate average of values</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="group-by">
+          <div class="palette-item-icon">&#9776;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">GROUP BY</div>
+            <div class="palette-item-desc">Group rows and aggregate</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="having">
+          <div class="palette-item-icon">&#10003;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">GROUP BY with HAVING</div>
+            <div class="palette-item-desc">Filter groups after aggregation</div>
+          </div>
+        </div>
+
+        <!-- Joins -->
+        <div class="palette-category">Joins</div>
+        <div class="palette-item" data-template="inner-join">
+          <div class="palette-item-icon">&#8904;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">INNER JOIN</div>
+            <div class="palette-item-desc">Join matching rows from both tables</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="left-join">
+          <div class="palette-item-icon">&#8592;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">LEFT JOIN</div>
+            <div class="palette-item-desc">All rows from left, matching from right</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="full-join">
+          <div class="palette-item-icon">&#8596;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">FULL OUTER JOIN</div>
+            <div class="palette-item-desc">All rows from both tables</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="cross-join">
+          <div class="palette-item-icon">&#10005;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">CROSS JOIN</div>
+            <div class="palette-item-desc">Cartesian product of tables</div>
+          </div>
+        </div>
+
+        <!-- Window Functions -->
+        <div class="palette-category">Window Functions</div>
+        <div class="palette-item" data-template="row-number">
+          <div class="palette-item-icon">1.</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">ROW_NUMBER()</div>
+            <div class="palette-item-desc">Assign sequential row numbers</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="rank">
+          <div class="palette-item-icon">&#127942;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">RANK() / DENSE_RANK()</div>
+            <div class="palette-item-desc">Rank rows within partitions</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="lag-lead">
+          <div class="palette-item-icon">&#8644;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">LAG() / LEAD()</div>
+            <div class="palette-item-desc">Access previous/next row values</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="running-total">
+          <div class="palette-item-icon">&#8599;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">Running Total</div>
+            <div class="palette-item-desc">Cumulative sum over rows</div>
+          </div>
+        </div>
+
+        <!-- DuckDB Specific -->
+        <div class="palette-category">DuckDB Features</div>
+        <div class="palette-item" data-template="read-parquet">
+          <div class="palette-item-icon">&#128230;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">Read Parquet file</div>
+            <div class="palette-item-desc">Query parquet file directly</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="describe">
+          <div class="palette-item-icon">&#128196;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">DESCRIBE table</div>
+            <div class="palette-item-desc">Show table schema and types</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="sample">
+          <div class="palette-item-icon">&#127922;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">SAMPLE rows</div>
+            <div class="palette-item-desc">Random sample from table</div>
+          </div>
+        </div>
+        <div class="palette-item" data-template="pivot">
+          <div class="palette-item-icon">&#8634;</div>
+          <div class="palette-item-content">
+            <div class="palette-item-title">PIVOT table</div>
+            <div class="palette-item-desc">Transform rows to columns</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="palette-footer">
+        <span id="palette-count">20 templates</span>
+        <div class="palette-footer-actions">
+          <span class="palette-footer-action"><kbd>Tab</kbd> Preview</span>
+          <span class="palette-footer-action"><kbd>&#9166;</kbd> Insert</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Command Palette functionality
+    const overlay = document.getElementById('palette-overlay');
+    const searchInput = document.getElementById('palette-search');
+    const resultsContainer = document.getElementById('palette-results');
+    let selectedIndex = 0;
+
+    function openPalette() {
+      overlay.classList.add('open');
+      searchInput.value = '';
+      searchInput.focus();
+      filterTemplates('');
+      updateSelection(0);
+    }
+
+    function closePalette(event) {
+      if (!event || event.target === overlay) {
+        overlay.classList.remove('open');
+      }
+    }
+
+    function filterTemplates(query) {
+      const items = resultsContainer.querySelectorAll('.palette-item');
+      const categories = resultsContainer.querySelectorAll('.palette-category');
+      const lowerQuery = query.toLowerCase();
+      let visibleCount = 0;
+      let categoryVisibility = {};
+
+      // First pass: check items
+      items.forEach(item => {
+        const title = item.querySelector('.palette-item-title').textContent.toLowerCase();
+        const desc = item.querySelector('.palette-item-desc').textContent.toLowerCase();
+        const matches = title.includes(lowerQuery) || desc.includes(lowerQuery);
+        item.style.display = matches ? 'flex' : 'none';
+        if (matches) {
+          visibleCount++;
+          // Find parent category
+          let prev = item.previousElementSibling;
+          while (prev && !prev.classList.contains('palette-category')) {
+            prev = prev.previousElementSibling;
+          }
+          if (prev) categoryVisibility[prev.textContent] = true;
+
+          // Highlight matching text
+          const titleEl = item.querySelector('.palette-item-title');
+          if (query && title.includes(lowerQuery)) {
+            const regex = new RegExp(`(${query})`, 'gi');
+            titleEl.innerHTML = titleEl.textContent.replace(regex, '<mark>$1</mark>');
+          } else {
+            titleEl.innerHTML = titleEl.textContent;
+          }
+        }
+      });
+
+      // Second pass: show/hide categories
+      categories.forEach(cat => {
+        cat.style.display = categoryVisibility[cat.textContent] ? 'block' : 'none';
+      });
+
+      document.getElementById('palette-count').textContent = `${visibleCount} templates`;
+      updateSelection(0);
+    }
+
+    function updateSelection(newIndex) {
+      const items = [...resultsContainer.querySelectorAll('.palette-item')].filter(i => i.style.display !== 'none');
+      if (items.length === 0) return;
+
+      items.forEach(item => item.classList.remove('selected'));
+      selectedIndex = Math.max(0, Math.min(newIndex, items.length - 1));
+      items[selectedIndex]?.classList.add('selected');
+      items[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        openPalette();
+      }
+
+      if (!overlay.classList.contains('open')) return;
+
+      if (e.key === 'Escape') {
+        closePalette();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        updateSelection(selectedIndex + 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        updateSelection(selectedIndex - 1);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const items = [...resultsContainer.querySelectorAll('.palette-item')].filter(i => i.style.display !== 'none');
+        if (items[selectedIndex]) {
+          // In real app, this would insert the template
+          console.log('Insert template:', items[selectedIndex].dataset.template);
+          closePalette();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
