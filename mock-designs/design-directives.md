@@ -260,6 +260,54 @@ Tooltips appear on hover for icon-only buttons. Position them below the button b
 
 **Important:** Do NOT use `overflow: hidden` on panels that contain tooltips - it will clip them. Apply `border-radius` directly to header/footer elements instead.
 
+### Command Palette
+
+For features requiring many options (100+ items), use a searchable command palette instead of inline buttons. Triggered via keyboard shortcut (Cmd/Ctrl+K) or button click.
+
+```css
+.command-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  z-index: 2000;
+}
+
+.command-palette {
+  width: 100%;
+  max-width: 550px;
+  background: var(--bg-panel);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 12px;
+  box-shadow:
+    0 0 40px rgba(0, 245, 255, 0.3),
+    0 25px 50px rgba(0, 0, 0, 0.5);
+}
+```
+
+**Structure:**
+- **Header**: Search input with icon, keyboard hints
+- **Results**: Categorized items with sticky category headers, icons, titles, descriptions
+- **Footer**: Result count, action hints
+
+**Interaction:**
+- `Cmd/Ctrl+K` to open
+- Type to filter (searches title and description)
+- `↑↓` to navigate, `Enter` to select, `Esc` to close
+- Highlight matching text with `<mark>` tags in `--neon-magenta`
+
+**Selected item styling:**
+```css
+.palette-item.selected {
+  background: var(--bg-hover);
+  border-left: 3px solid var(--neon-magenta);
+}
+```
+
 ## Visual Effects
 
 ### Background Grid
