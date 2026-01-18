@@ -6,8 +6,14 @@ import {
   ResultsTableUI,
   FileListUI,
   DiagnosticsUI,
-  SQLEditor
+  SQLEditor,
+  CommandPalette,
+  injectCommandPaletteStyles
 } from './modules/ui/index.js';
+import {
+  getTableMapper,
+  getMacroLoader
+} from './modules/templates/index.js';
 
 // DOM Elements
 const statusEl = document.getElementById(DOM_IDS.STATUS);
@@ -27,6 +33,11 @@ const resultsSection = document.getElementById(DOM_IDS.RESULTS_SECTION);
 
 // App instance
 let app = null;
+
+// Template system instances
+let tableMapper = null;
+let macroLoader = null;
+let commandPalette = null;
 
 // UI Components
 const status = new StatusIndicator(statusEl);
@@ -63,12 +74,21 @@ async function processFiles(files) {
   const fileArray = Array.from(files);
   let successCount = 0;
   let errorCount = 0;
+  const mappedTables = [];
 
   for (const file of fileArray) {
     try {
       const { name, buffer } = await handleFileUpload(file);
-      await app.loadParquetFile(name, buffer);
+      const tableName = await app.loadParquetFile(name, buffer);
       successCount++;
+
+      // Auto-map table to expected placeholder if it matches
+      if (tableMapper) {
+        const mappedTo = tableMapper.autoMap(tableName);
+        if (mappedTo) {
+          mappedTables.push({ tableName, mappedTo });
+        }
+      }
     } catch (error) {
       errorCount++;
       console.error(`Failed to load ${file.name}:`, error);
@@ -81,7 +101,14 @@ async function processFiles(files) {
   if (successCount > 0) {
     const tables = app.getAllTablesMetadata();
     const tableNames = tables.slice(-successCount).map(t => t.tableName).join(', ');
-    const message = `Successfully loaded ${successCount} file${successCount > 1 ? 's' : ''}: ${tableNames}${errorCount > 0 ? ` (${errorCount} failed)` : ''}`;
+    let message = `Successfully loaded ${successCount} file${successCount > 1 ? 's' : ''}: ${tableNames}`;
+    if (errorCount > 0) {
+      message += ` (${errorCount} failed)`;
+    }
+    if (mappedTables.length > 0) {
+      const mappings = mappedTables.map(m => `${m.tableName} -> ${m.mappedTo}`).join(', ');
+      message += `. Templates enabled for: ${mappings}`;
+    }
     resultsUI.showSuccess(message);
   } else {
     resultsUI.showError('Failed to load any files');
@@ -97,6 +124,12 @@ async function handleRename(tableName) {
 
   try {
     const sanitizedName = await app.renameTable(tableName, newName);
+
+    // Update table mapper - this will trigger macro re-registration
+    if (tableMapper) {
+      tableMapper.handleTableRename(tableName, sanitizedName);
+    }
+
     resultsUI.showSuccess(`Renamed "${tableName}" to "${sanitizedName}"`);
     updateUI();
   } catch (error) {
@@ -112,6 +145,12 @@ async function removeFile(tableName) {
 
   try {
     await app.removeTable(tableName);
+
+    // Unmap the table if it was mapped
+    if (tableMapper) {
+      tableMapper.unmapByActualTable(tableName);
+    }
+
     resultsUI.showSuccess(`Removed table "${tableName}"`);
     updateUI();
   } catch (error) {
@@ -127,6 +166,12 @@ async function clearAllFiles() {
 
   try {
     await app.clearAllTables();
+
+    // Clear all table mappings
+    if (tableMapper) {
+      tableMapper.clearAll();
+    }
+
     resultsUI.showSuccess('All files cleared');
     updateUI();
     resultsUI.showPlaceholder();
@@ -177,12 +222,37 @@ function handleExport() {
 }
 
 /**
+ * Handle template selection from command palette
+ */
+function handleTemplateSelect(sql) {
+  sqlEditor.setValue(sql);
+  sqlInput.focus();
+}
+
+/**
+ * Get currently mapped table placeholders
+ */
+function getMappedTables() {
+  if (!tableMapper) return new Set();
+  return tableMapper.getMappedPlaceholders();
+}
+
+/**
  * Initialize the application
  */
 async function init() {
   try {
     status.setLoading(MESSAGES.INITIALIZING);
     app = await getApp();
+
+    // Initialize template system
+    tableMapper = getTableMapper();
+    macroLoader = getMacroLoader(app.conn, tableMapper);
+
+    // Initialize command palette
+    injectCommandPaletteStyles();
+    commandPalette = new CommandPalette(handleTemplateSelect, getMappedTables);
+
     status.setReady(MESSAGES.READY);
     sqlEditor.enableExecute();
 
@@ -239,6 +309,16 @@ executeBtn.addEventListener('click', executeQuery);
 
 // Export button click
 exportBtn.addEventListener('click', handleExport);
+
+// Templates button click
+const templatesBtn = document.getElementById('templates-btn');
+if (templatesBtn) {
+  templatesBtn.addEventListener('click', () => {
+    if (commandPalette) {
+      commandPalette.open();
+    }
+  });
+}
 
 // Initialize app
 init();

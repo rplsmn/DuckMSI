@@ -1,0 +1,53 @@
+# =============================================================================
+# DuckMSI Macro Registry
+# =============================================================================
+# This file defines:
+# 1. Expected PMSI tables (the ~20 tables that templates depend on)
+# 2. Macro definitions (SQL templates that generate DuckDB table macros)
+#
+# Users will map their uploaded files to these logical table names.
+# Macros become available when all their dependencies are satisfied.
+# =============================================================================
+
+# =============================================================================
+# TABLE DEFINITIONS
+# =============================================================================
+# Define all expected PMSI tables with their metadata.
+
+[tables.fixe]
+description = "Table des sejours MCO (fichier FIX)"
+expected_columns = ["ghm", "ghm2", "dp", "dr", "das", "sejour_id", "date_entree", "date_sortie"]
+category = "mco"
+
+[tables.rss]
+description = "Resume de sortie standardise"
+expected_columns = ["sejour_id", "rum_id", "dp", "dr"]
+category = "mco"
+
+[tables.rum]
+description = "Resume d'unite medicale"
+expected_columns = ["rum_id", "sejour_id", "um", "date_entree", "date_sortie"]
+category = "mco"
+
+[tables.diag]
+description = "Diagnostics associes"
+expected_columns = ["sejour_id", "diag_code", "diag_type"]
+category = "mco"
+
+[tables.acte]
+description = "Actes CCAM"
+expected_columns = ["sejour_id", "acte_code", "date_acte", "activite"]
+category = "mco"
+
+# =============================================================================
+# MACRO DEFINITIONS
+# =============================================================================
+# Each macro references a SQL file and declares its table dependencies.
+# The SQL file contains only the SELECT statement with {{placeholder}} syntax.
+
+[macros.get_casemix]
+name = "Casemix (GHM Distribution)"
+description = "Count GHM codes excluding CMD 90 (error codes)"
+category = "casemix"
+sql_file = "casemix.sql"
+depends_on = ["fixe"]

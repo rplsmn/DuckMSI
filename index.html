@@ -130,6 +130,26 @@
       cursor: not-allowed;
     }
 
+    .sql-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .templates-btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .templates-btn:hover {
+      background: #0056b3;
+    }
+
     /* Results */
     #results-box {
       background: #f8f9fa;
@@ -414,7 +434,10 @@
     <div class="section" id="sql-section" style="display:none;">
       <div class="section-title">2. Enter SQL Query</div>
       <textarea id="sql-input" placeholder="SELECT * FROM 'your_file.parquet' LIMIT 10"></textarea>
-      <button id="execute-btn" disabled>Execute Query</button>
+      <div class="sql-buttons">
+        <button id="execute-btn" disabled>Execute Query</button>
+        <button id="templates-btn" class="templates-btn">Templates (Ctrl+K)</button>
+      </div>
     </div>
 
     <!-- Results Section -->
